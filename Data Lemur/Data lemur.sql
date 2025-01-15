@@ -1,4 +1,26 @@
+/**
 
+order_id location tmestamp.         
+123 Del 2024-12-01 01:00 PM      
+123 Del 2024-12-02 03:00 PM      
+123 BLR 2024-12-03 01:00 AM      
+123 Mum 2024-12-04 06:00 PM
+123 Del 2024-12-05 01:00 PM     
+123 Del 2024-12-06 01:00 PM   
+123 BLR 2024-12-07 01:00 PM
+123 BLR 2024-12-08 01:00 PM
+123 Guj 2024-12-10 12:00 PM
+
+and it's O/P
+
+123 Del 2024-12-02 03:00 PM
+123 BLR 2024-12-03 01:00 AM
+123 Mum 2024-12-04 06:00 PM
+123 Del 2024-12-06 01:00 PM
+123 BLR 2024-12-08 01:00 PM
+123 Guj 2024-12-10 12:00 PM
+
+*/
 WITH OrderedData AS (
     SELECT
         order_id,
@@ -19,7 +41,8 @@ WHERE
     next_location IS NULL;
 
 
-
+/*
+*/
 
 
 -- Create the messages table
@@ -688,3 +711,120 @@ with cte as (
 select  case when call_category='n/a' or call_category is null then 1 else 0 end uncategorised_call from callers)
 select  round((sum(uncategorised_call)*1.0/count(*)) *100, 1) uncategorised_call_pct
 from  cte
+
+/*
+https://datalemur.com/questions/yoy-growth-rate
+*/
+CREATE TABLE user_transactions_ (
+    transaction_id INT PRIMARY KEY,
+    product_id INT,
+    spend DECIMAL(10, 2),
+    transaction_date Timestamp
+);
+
+INSERT INTO user_transactions_ (transaction_id, product_id, spend, transaction_date)
+VALUES
+(1341, 123424, 1500.60, '2019-12-31 12:00:00'),
+(1423, 123424, 1000.20, '2020-12-31 12:00:00'),
+(1623, 123424, 1246.44, '2021-12-31 12:00:00'),
+(1322, 123424, 2145.32, '2022-12-31 12:00:00'),
+(1344, 234412, 1800.00, '2019-12-31 12:00:00'),
+(1435, 234412, 1234.00, '2020-12-31 12:00:00'),
+(4325, 234412, 889.50, '2021-12-31 12:00:00'),
+(5233, 234412, 2900.00, '2022-12-31 12:00:00'),
+(2134, 543623, 6450.00, '2019-12-31 12:00:00'),
+(1234, 543623, 5348.12, '2020-12-31 12:00:00'),
+(2423, 543623, 2345.00, '2021-12-31 12:00:00'),
+(1245, 543623, 5680.00, '2022-12-31 12:00:00');
+
+with cte as (
+select *, date_part('Year', transaction_date) as year,
+lag(spend) over(partition By product_id order by transaction_date) prev_year_spend
+from user_transactions_)
+select year, 
+product_id, 
+spend as curr_year_spend, 
+prev_year_spend, 
+round((spend - prev_year_spend) / prev_year_spend * 100,2) as 
+yoy_rate from cte
+
+/*
+https://datalemur.com/questions/prime-warehouse-storage
+*/
+CREATE TABLE inventory (
+    item_id INT PRIMARY KEY,
+    item_type VARCHAR(20),
+    item_category VARCHAR(50),
+    square_footage DECIMAL(6, 2)
+);
+
+INSERT INTO inventory (item_id, item_type, item_category, square_footage)
+VALUES
+(1374, 'prime_eligible', 'mini refrigerator', 68.00),
+(4245, 'not_prime', 'standing lamp', 26.40),
+(5743, 'prime_eligible', 'washing machine', 325.00),
+(8543, 'not_prime', 'dining chair', 64.50),
+(2556, 'not_prime', 'vase', 15.00),
+(2452, 'prime_eligible', 'television', 85.00),
+(3255, 'not_prime', 'side table', 22.60),
+(1672, 'prime_eligible', 'laptop', 8.50),
+(4256, 'prime_eligible', 'wall rack', 55.50),
+(6325, 'prime_eligible', 'desktop computer', 13.20);
+
+WITH cte AS
+(SELECT 
+SUM(CASE WHEN item_type = 'not_prime' THEN 1 ELSE 0 END) n_prime,
+SUM(CASE WHEN item_type = 'prime_eligible' THEN 1 ELSE 0 END) prime,
+SUM(CASE WHEN item_type = 'not_prime' THEN square_footage END) sum_np,
+SUM(CASE WHEN item_type = 'prime_eligible' THEN square_footage END) sum_p
+FROM inventory)
+select 'prime_eligible' as item_type,
+floor(500000/sum_p)*prime item_count
+from cte
+union all
+select 'not_prime' as item_type,
+TRUNC((500000-TRUNC(500000/SUM_P,0)*SUM_P)/SUM_NP, 0)*n_prime item_count
+from cte
+
+
+/*
+https://datalemur.com/questions/median-search-freq
+*/
+
+-- Create table statement
+CREATE TABLE search_frequency (
+    searches INTEGER NOT NULL,
+    num_users INTEGER NOT NULL
+);
+
+-- Insert statements
+INSERT INTO search_frequency (searches, num_users) VALUES
+(1, 2),
+(4, 1),
+(2, 2),
+(3, 3),
+(6, 1),
+(5, 3),
+(7, 2);
+
+  -- Sol-1
+with cte as (
+SELECT searches, num_users, row_number() over( order by searches ) rn
+FROM search_frequency
+CROSS JOIN LATERAL generate_series(1, num_users))
+
+
+select round(sum(searches)*1.0/2,1) from cte where rn in ((select count(*) from cte)/2 , ((select count(*) from cte)/2)+1)
+
+-- SOL-2 - Optimize solution
+WITH cte AS (
+    SELECT searches, 
+           row_number() OVER (ORDER BY searches) AS rn,
+           count(*) OVER () AS total_count
+    FROM search_frequency
+    CROSS JOIN LATERAL generate_series(1, num_users)
+)
+SELECT round(avg(searches), 1) AS median
+FROM cte
+WHERE rn IN ((total_count / 2), (total_count / 2) + 1);
+
