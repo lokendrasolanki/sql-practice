@@ -155,7 +155,7 @@ ROUND(avg(EXTRACT(EPOCH FROM page_exit_time - page_load_time)),2) avg_session_du
 from page_load pl
 inner join page_exit pe
 on pl.date = pe.date and pl.user_id = pe.user_id
-group by pl.user_id
+group by pl.user_i
 
 
 /*
@@ -198,9 +198,12 @@ INSERT INTO google_gmail_emails (id, from_user, to_user, day) VALUES
 
 -- SOL -
 with cte as(
-SELECT from_user, count(1) total_emails  FROM google_gmail_emails
+SELECT from_user, 
+count(1) total_emails  
+FROM google_gmail_emails
 group by from_user)
-select from_user, total_emails, Row_number() over(order by total_emails desc,from_user asc)
+select from_user, total_emails, 
+Row_number() over(order by total_emails desc, from_user asc)
 from cte;
 
 /*
@@ -236,4 +239,163 @@ lag(created_at) over(partition by user_id order by created_at) prev_date
 from amazon_transactions 
 )
 select distinct user_id from cte 
-where (created_at - prev_date)<=7
+where (created_at - prev_date)<=7;
+
+/*
+https://platform.stratascratch.com/coding/10318-new-products?code_type=1
+
+Calculate the net change in the number of products launched by companies in 2020 compared to 2019.
+Your output should include the company names and the net difference.
+(Net difference = Number of products launched in 2020 - The number launched in 2019.)
+*/
+
+-- Create the car_models table
+CREATE TABLE car_launches (
+    year INT,
+    company_name VARCHAR(255),
+    product_name VARCHAR(255)
+);
+
+-- Insert statements
+INSERT INTO car_launches (year, company_name, product_name) VALUES
+(2019, 'Toyota', 'Avalon'),
+(2019, 'Toyota', 'Camry'),
+(2020, 'Toyota', 'Corolla'),
+(2019, 'Honda', 'Accord'),
+(2019, 'Honda', 'Passport'),
+(2019, 'Honda', 'CR-V'),
+(2020, 'Honda', 'Pilot'),
+(2019, 'Honda', 'Civic'),
+(2020, 'Chevrolet', 'Trailblazer'),
+(2020, 'Chevrolet', 'Trax'),
+(2019, 'Chevrolet', 'Traverse'),
+(2020, 'Chevrolet', 'Blazer'),
+(2019, 'Ford', 'Figo'),
+(2020, 'Ford', 'Aspire'),
+(2019, 'Ford', 'Endeavour'),
+(2020, 'Jeep', 'Wrangler'),
+(2020, 'Jeep', 'Cherokee'),
+(2020, 'Jeep', 'Compass'),
+(2019, 'Jeep', 'Renegade'),
+(2019, 'Jeep', 'Gladiator');
+
+-- Select statement to view the table
+with cte as (
+SELECT year, company_name, count(1) no_of_product FROM car_launches 
+group by year, company_name),
+past_purches as (
+select *, lag(no_of_product) over(partition by company_name order by year) past_year_purches from cte)
+select company_name, (no_of_product - past_year_purches) net_difference from past_purches
+where past_year_purches is not null;
+
+/*
+https://platform.stratascratch.com/coding/10304-risky-projects?code_type=1
+
+Identify projects that are overbudget. 
+A project is overbudget if the prorated cost of all employees assigned to it exceeds the project’s budget.
+To determine this, prorate each employee's annual salary to match the project's duration.
+For example, if a project with a six-month duration has a budget of $10,000.
+Output a list of overbudget projects with the following details: 
+project name, project budget, and prorated total employee expenses (rounded up to the nearest dollar).
+Hint: Assume all years have 365 days and disregard leap years.
+
+OP-
+"Project4"	15776	18429
+"Project6"	41611	44469
+*/
+
+CREATE TABLE linkedin_projects (
+    id BIGINT PRIMARY KEY,
+    title TEXT NOT NULL,
+    budget BIGINT,
+    start_date DATE,
+    end_date DATE
+);
+INSERT INTO linkedin_projects (id, title, budget, start_date, end_date) VALUES
+(1, 'Project1', 29498, '2018-08-31', '2019-03-13'),
+(2, 'Project2', 32487, '2018-01-27', '2018-12-13'),
+(3, 'Project3', 43909, '2019-11-05', '2019-12-09'),
+(4, 'Project4', 15776, '2018-06-28', '2018-11-20'),
+(5, 'Project5', 36268, '2019-03-13', '2020-01-02'),
+(6, 'Project6', 41611, '2018-09-18', '2019-08-28'),
+(7, 'Project7', 34003, '2020-05-28', '2020-10-01'),
+(8, 'Project8', 49284, '2019-12-18', '2020-04-18'),
+(9, 'Project9', 32341, '2018-05-24', '2019-05-11'),
+(10, 'Project10', 47587, '2018-06-24', '2018-11-19'),
+(11, 'Project11', 11705, '2020-03-06', '2020-11-03');
+
+CREATE TABLE linkedin_emp_projects (
+    emp_id BIGINT,
+    project_id BIGINT
+ 
+);
+INSERT INTO linkedin_emp_projects (emp_id, project_id) VALUES
+(10592, 1),
+(10593, 2),
+(10594, 3),
+(10595, 4),
+(10596, 5),
+(10597, 6),
+(10598, 7),
+(10599, 8),
+(10600, 9),
+(10601, 10),
+(10602, 11),
+(10642, 1),
+(10643, 2),
+(10644, 3),
+(10645, 4),
+(10646, 5),
+(10647, 6),
+(10648, 7),
+(10649, 8),
+(10650, 9),
+(10651, 10),
+(10652, 11);
+CREATE TABLE linkedin_employees (
+    id BIGINT PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    salary BIGINT
+);
+
+INSERT INTO linkedin_employees (id, first_name, last_name, salary) VALUES
+(10592, 'Jennifer', 'Roberts', 20204),
+(10593, 'Haley', 'Ho', 33154),
+(10594, 'Eric', 'Mccarthy', 32360),
+(10595, 'Gina', 'Martinez', 46388),
+(10596, 'Jason', 'Fields', 12348),
+(10597, 'Joseph', 'Hernandez', 47183),
+(10598, 'Catherine', 'Mccarthy', 37423),
+(10599, 'Kelsey', 'Miles', 34488),
+(10600, 'Scott', 'Lopez', 24444),
+(10601, 'Gina', 'Miller', 36866),
+(10602, 'Nicole', 'Jenkins', 14327);
+
+-- get project duration
+with project_duration as (
+select *, end_date-start_date as project_duration  from linkedin_projects
+),
+--get employee prorated cost for project duration
+employee_cost as (
+select pd.id as project_id, le.id as emp_id, le.salary,  
+(le.salary/365.0) * pd.project_duration as prorated_cost 
+from linkedin_employees le
+inner join linkedin_emp_projects lep
+on le.id = lep.emp_id
+inner join project_duration pd
+on lep.project_id = pd.id
+),
+-- get total project cost 
+total_project_cost as (
+select project_id, sum(prorated_cost)  toatal_prorated_cost from employee_cost
+group by project_id
+)
+select pd.title, 
+pd.budget, 
+CEIL(tpc.toatal_prorated_cost) as prorated_employee_expense --rounded up to the nearest 
+from total_project_cost tpc
+inner join project_duration pd 
+on tpc.project_id = pd.id
+where tpc.toatal_prorated_cost>pd.budget
+order by title
