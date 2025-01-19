@@ -201,7 +201,39 @@ with cte as(
 SELECT from_user, count(1) total_emails  FROM google_gmail_emails
 group by from_user)
 select from_user, total_emails, Row_number() over(order by total_emails desc,from_user asc)
-from cte
-;
+from cte;
 
+/*
+https://platform.stratascratch.com/coding/10322-finding-user-purchases?code_type=1
 
+Identify returning active users by finding users who made a second purchase within 7 days of any previous purchase. 
+Output a list of these user_ids.
+*/
+-- Create the sales table
+CREATE TABLE amazon_transactions (
+    id INT PRIMARY KEY,
+    user_id INT,
+    item VARCHAR(255),
+    created_at DATE,
+    revenue DECIMAL(10, 2) -- Use DECIMAL for currency
+);
+
+-- Insert statements
+INSERT INTO amazon_transactions (id, user_id, item, created_at, revenue) VALUES
+(1, 109, 'milk', '2020-03-03', 123.00),
+(2, 139, 'biscuit', '2020-03-18', 421.00),
+(3, 108, 'banana', '2020-03-18', 86.00),
+(4, 139, 'bread', '2020-03-30', 929.00),
+(5, 109, 'bread', '2020-03-22', 432.00),
+(6, 109, 'bread', '2020-03-02', 362.00);
+
+-- SOL-
+
+with cte as (
+select user_id, 
+created_at, 
+lag(created_at) over(partition by user_id order by created_at) prev_date 
+from amazon_transactions 
+)
+select distinct user_id from cte 
+where (created_at - prev_date)<=7
