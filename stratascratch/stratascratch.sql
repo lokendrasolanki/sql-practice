@@ -159,6 +159,49 @@ group by pl.user_id
 
 
 /*
+https://platform.stratascratch.com/coding/10351-activity-rank?code_type=1
+
+Find the email activity rank for each user.
+Email activity rank is defined by the total number of emails sent. 
+The user with the highest number of emails sent will have a rank of 1, and so on. 
+Output the user, total emails, and their activity rank.
+
+•	Order records first by the total emails in descending order.
+•	Then, sort users with the same number of emails in alphabetical order by their username.
+•	In your rankings, return a unique value (i.e., a unique rank) even if multiple users have the same number of emails.
 */
+
+CREATE TABLE google_gmail_emails (
+    id INT PRIMARY KEY,  -- Important: Add a primary key
+    from_user VARCHAR(255),
+    to_user VARCHAR(255),
+    day INT
+);
+
+-- Insert statements
+INSERT INTO google_gmail_emails (id, from_user, to_user, day) VALUES
+(0, '6edf0be4b2267df1fa', '75d295377a46f83236', 10),
+(1, '6edf0be4b2267df1fa', '32ded68d89443e808', 6),
+(2, '6edf0be4b2267df1fa', '55e60cfcc9dc49c17e', 10),
+(3, '6edf0be4b2267df1fa', 'e0e0defbb9ec47f6f7', 6),
+(4, '6edf0be4b2267df1fa', '47be2887786891367e', 1),
+(5, '6edf0be4b2267df1fa', '2813e59cf6c1ff698e', 6),
+(6, '6edf0be4b2267df1fa', 'a84065b7933ad01019', 8),
+(7, '6edf0be4b2267df1fa', '850badf89ed8f06854', 1),
+(8, '6edf0be4b2267df1fa', '6b503743a13d778200', 1),
+(9, '6edf0be4b2267df1fb', 'd63386c884aeb9f71d', 3),
+(10, '6edf0be4b2267df1fb', '5b8754928306a18b68', 2),
+(11, '6edf0be4b2267df1fb', '6edf0be4b2267df1fa', 8),
+(12, '6edf0be4b2267df1fb', '406539987dd9b679c0', 9),
+(13, '6edf0be4b2267df1fb', '114bafadff2d882864', 5),
+(14, '6edf0be4b2267df1fb', '157e3e9278e32aba3e', 2);
+
+-- SOL -
+with cte as(
+SELECT from_user, count(1) total_emails  FROM google_gmail_emails
+group by from_user)
+select from_user, total_emails, Row_number() over(order by total_emails desc,from_user asc)
+from cte
+;
 
 
