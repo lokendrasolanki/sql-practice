@@ -399,3 +399,49 @@ inner join project_duration pd
 on tpc.project_id = pd.id
 where tpc.toatal_prorated_cost>pd.budget
 order by title
+
+/*
+https://platform.stratascratch.com/coding/10284-popularity-percentage?code_type=1
+
+Find the popularity percentage for each user on Meta/Facebook. 
+The dataset contains two columns, user1 and user2, which represent pairs of friends. 
+Each row indicates a mutual friendship between user1 and user2, meaning both users are friends with each other.
+A user's popularity percentage is calculated as the total number of friends they have 
+(counting connections from both user1 and user2 columns) divided by the total number of unique users 
+on the platform. Multiply this value by 100 to express it as a percentage.
+
+
+Output each user along with their calculated popularity percentage. 
+The results should be ordered by user ID in ascending order.
+*/
+CREATE TABLE facebook_friends (
+    user1 BIGINT,
+    user2 BIGINT
+);
+INSERT INTO facebook_friends (user1, user2) VALUES
+(2, 1),
+(1, 3),
+(4, 1),
+(1, 5),
+(1, 6),
+(2, 6),
+(7, 2),
+(8, 3),
+(3, 9);
+
+with cte as(
+select  user1, user2 from facebook_friends 
+union 
+select  user2, user1 from facebook_friends ),
+cte_count as (
+select 
+user1, 
+count( user1) over() as total_unique_user, 
+count(1) as total_friend from cte 
+group by user1
+)
+select user1,
+Round((total_friend*1.0/total_unique_user) * 100,2) popularity_percent 
+from cte_count
+order by user1
+
