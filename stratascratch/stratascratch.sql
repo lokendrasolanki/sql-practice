@@ -444,4 +444,5 @@ select user1,
 Round((total_friend*1.0/total_unique_user) * 100,2) popularity_percent 
 from cte_count
 order by user1
-
+/*
+*/
