@@ -445,4 +445,127 @@ Round((total_friend*1.0/total_unique_user) * 100,2) popularity_percent
 from cte_count
 order by user1
 /*
+https://platform.stratascratch.com/coding/10296-facebook-accounts?code_type=1
+Calculate the ratio of accounts closed on January 10th, 2020 using the fb_account_status table.
 */
+
+CREATE TABLE fb_account_status (
+    acc_id BIGINT,
+    date DATE,
+    status TEXT
+	
+);
+
+INSERT INTO fb_account_status (acc_id, date, status) VALUES
+(3, '2019-12-23', 'closed'),
+(4, '2020-01-10', 'open'),
+(5, '2020-01-10', 'open'),
+(6, '2020-01-10', 'open'),
+(7, '2020-01-10', 'closed'),
+(8, '2020-01-10', 'closed'),
+(9, '2020-01-11', 'closed'),
+(10, '2019-12-28', 'closed'),
+(11, '2020-01-15', 'open');
+
+with cte as (
+select
+ROUND(sum(case when status = 'closed' then 1 else 0 end)*1.0/  count(distinct acc_id),2) as closed_ratio
+  from fb_account_status where date = '2020-01-10'
+)
+select * from cte
+/*
+https://platform.stratascratch.com/coding/10288-clicked-vs-non-clicked-search-results?code_type=1
+
+The question asks you to calculate two percentages based on search results. 
+First, find the percentage of all search records clicked (clicked = 1) and in the top 3 positions.
+Second, find the percentage of all search records that were not clicked (clicked = 0) but in the top 3 positions. 
+Both percentages are calculated with respect to the total number of search records and should be output 
+in the same row as two columns.
+
+*/
+
+CREATE TABLE fb_search_events (
+    search_id BIGINT,
+    search_term TEXT,
+    clicked INT,
+    search_results_position INT
+);
+
+INSERT INTO fb_search_events (search_id, search_term, clicked, search_results_position) VALUES
+(1, 'rabbit', 1, 1),
+(2, 'airline', 1, 2),
+(2, 'quality', 1, 3),
+(3, 'hotel', 0, 1),
+(3, 'scandal', 0, 3),
+(5, 'rabbit', 1, 1),
+(6, 'politics', 1, 2),
+(10, 'rabbit', 0, 3);
+
+-- SOL-1
+select ROUND((sum(case when clicked=1 then 1 else 0 end)*1.0/ (select count(*) from fb_search_events))*100 ,2) as top_3_clicked  ,  
+ ROUND((sum(case when clicked=0 then 1 else 0 end)*1.0/ (select count(*) from fb_search_events))*100,2) as top_3_notclicked from fb_search_events
+where search_results_position<=3
+
+-- SOL-2
+with total_row_cte as (
+select clicked,
+search_results_position,
+count(search_id) over() as total
+from fb_search_events
+)
+select 
+ ROUND((sum(case when clicked=1 then 1 else 0 end)*1.0/ max(total))*100 ,2) as top_3_clicked  ,  
+ ROUND((sum(case when clicked=0 then 1 else 0 end)*1.0/ max(total))*100,2) as top_3_notclicked  
+ from total_row_cte
+ where search_results_position<=3
+ 
+/*
+https://platform.stratascratch.com/coding/10285-acceptance-rate-by-date?code_type=1
+
+Calculate the friend acceptance rate for each date when friend requests were sent.
+A request is sent if action = sent and accepted if action = accepted. If a request is not accepted, 
+there is no record of it being accepted in the table. 
+The output will only include dates where requests were sent and at least one of them was accepted, 
+as the acceptance rate can only be calculated for those dates. 
+Show the results ordered from the earliest to the latest date.
+*/
+
+drop table if exists fb_friend_requests;
+CREATE TABLE fb_friend_requests (
+    user_id_sender TEXT,
+    user_id_receiver TEXT,
+    date DATE,
+    action TEXT
+);
+INSERT INTO fb_friend_requests (user_id_sender, user_id_receiver, date, action) VALUES
+('ad4943sdz', '948ksx123d', '2020-01-04', 'sent'),
+('ad4943sdz', '948ksx123d', '2020-01-06', 'accepted'),
+('dfdfxf9483', '9djjjd9283', '2020-01-04', 'sent'),
+('dfdfxf9483', '9djjjd9283', '2020-01-15', 'accepted'),
+('ffdfff4234234', 'lpjzjdi4949', '2020-01-06', 'sent'),
+('fffkfld9499', '993lsldidif', '2020-01-06', 'sent'),
+('fffkfld9499', '993lsldidif', '2020-01-10', 'accepted'),
+('fg503kdsdd', 'ofp049dkd', '2020-01-04', 'sent'),
+('fg503kdsdd', 'ofp049dkd', '2020-01-10', 'accepted'),
+('hh643dfert', '847jfkf203', '2020-01-04', 'sent'),
+('r4gfgf2344', '234ddr4545', '2020-01-06', 'sent'),
+('r4gfgf2344', '234ddr4545', '2020-01-11', 'accepted');
+
+with total_sent_req as (
+select date, 
+count(*) total
+from fb_friend_requests
+where action='sent'
+group by date 
+),
+next_action_status as (
+select *, lead(action) over(partition by user_id_sender )
+from fb_friend_requests
+)
+select n.date,
+ROUND(sum(case when action='sent' and lead='accepted' then 1 else 0 end)*1.0/max(total),2) percentage_acceptance  
+from next_action_status n
+join total_sent_req t
+on n.date=t.date
+group by n.date 
+
