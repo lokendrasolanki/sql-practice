@@ -569,3 +569,63 @@ join total_sent_req t
 on n.date=t.date
 group by n.date 
 
+/*
+https://platform.stratascratch.com/coding/514-marketing-campaign-success-advanced?code_type=1
+
+You have a table of in-app purchases by user. Users that make their first in-app purchase are placed 
+in a marketing campaign where they see call-to-actions for more in-app purchases. 
+Find the number of users that made additional in-app purchases due to the success of the marketing campaign.
+
+The marketing campaign doesn't start until one day after the initial in-app purchase so users
+that only made one or multiple purchases on the first day do not count, 
+nor do we count users that over time purchase only the products they purchased on the first day.
+*/
+
+
+CREATE TABLE marketing_campaign (
+    user_id INT,
+    created_at DATE,
+    product_id INT,
+    quantity INT,
+    price DECIMAL(10, 2)
+);
+
+INSERT INTO marketing_campaign (user_id, created_at, product_id, quantity, price) VALUES
+(10, '2019-01-01', 101, 3, 55.00),
+(10, '2019-01-02', 119, 5, 29.00),
+(10, '2019-03-31', 111, 2, 149.00),
+(11, '2019-01-02', 105, 3, 234.00),
+(11, '2019-03-31', 120, 3, 99.00),
+(12, '2019-01-02', 112, 2, 200.00);
+
+
+SELECT * FROM marketing_campaign;
+
+/*
+https://platform.stratascratch.com/coding/2005-share-of-active-users?code_type=1
+
+Output share of US users that are active. Active users are the ones with an "open" status in the table.
+
+*/
+-- Create the users table
+CREATE TABLE fb_active_users (
+    user_id INT PRIMARY KEY,
+    name VARCHAR(255),
+    status VARCHAR(255), -- Or ENUM if you have a fixed set of statuses
+    country VARCHAR(255)
+);
+
+-- Insert statements
+INSERT INTO fb_active_users (user_id, name, status, country) VALUES
+(33, 'Amanda Leon', 'open', 'Australia'),
+(27, 'Jessica Farrell', 'open', 'Luxembourg'),
+(18, 'Wanda Ramirez', 'open', 'USA'),
+(50, 'Samuel Miller', 'closed', 'Brazil');
+
+--SOL-
+select 
+Round(sum(case when status = 'open' then 1 else 0 end)*1.0/count(*), 1)  as active_users_share 
+from fb_active_users
+
+
+
