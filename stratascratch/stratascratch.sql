@@ -627,5 +627,171 @@ select
 Round(sum(case when status = 'open' then 1 else 0 end)*1.0/count(*), 1)  as active_users_share 
 from fb_active_users
 
+/*
+https://platform.stratascratch.com/coding/2053-retention-rate?code_type=1
+
+Find the monthly retention rate of users for each account separately for Dec 2020 and Jan 2021. Retention rate is the percentage of active users an account retains over a given period of time. In this case, assume the user is retained if he/she stays with the app in any future months. For example, if a user was active in Dec 2020 and has activity in any future month, consider them retained for Dec. You can assume all accounts are present in Dec 2020 and Jan 2021. Your output should have the account ID and the Jan 2021 retention rate divided by Dec 2020 retention rate. Hint: In Oracle you should use "date" when referring to date column (reserved keyword).
+*/
+
+
+CREATE TABLE sf_events (
+    date DATE,
+    account_id VARCHAR(255),
+    user_id VARCHAR(255)
+);
+
+-- Insert statements
+INSERT INTO sf_events (date, account_id, user_id) VALUES
+('2021-01-01', 'A1', 'U1'),
+('2021-01-01', 'A1', 'U2'),
+('2021-01-06', 'A1', 'U3'),
+('2021-01-02', 'A1', 'U1'),
+('2020-12-24', 'A1', 'U2'),
+('2020-12-08', 'A1', 'U1'),
+('2020-12-09', 'A1', 'U1'),
+('2021-01-10', 'A2', 'U4'),
+('2021-01-11', 'A2', 'U4'),
+('2021-01-12', 'A2', 'U4'),
+('2021-01-15', 'A2', 'U5'),
+('2020-12-17', 'A2', 'U4'),
+('2020-12-25', 'A3', 'U6'),
+('2020-12-25', 'A3', 'U6'), 
+('2020-12-25', 'A3', 'U6'), 
+('2020-12-06', 'A3', 'U7'),
+('2020-12-06', 'A3', 'U6'),
+('2021-01-14', 'A3', 'U6'),
+('2021-02-07', 'A1', 'U1'),
+('2021-02-10', 'A1', 'U2'),
+('2021-02-01', 'A2', 'U4'),
+('2021-02-01', 'A2', 'U5'),
+('2020-12-05', 'A1', 'U8');
+
+--dentifies distinct users active in December 2020.
+WITH dec_2020_users AS (
+    SELECT DISTINCT account_id, user_id
+    FROM sf_events
+    WHERE date BETWEEN '2020-12-01' AND '2020-12-31'
+),
+--Identifies distinct users active in January 2021.
+jan_2021_users AS (
+    SELECT DISTINCT account_id, user_id
+    FROM sf_events
+    WHERE date BETWEEN '2021-01-01' AND '2021-01-31'
+),
+--Identifies users from December 2020 who were active in any future month (after December 2020)
+retained_dec_users AS (
+    SELECT d.account_id, d.user_id
+    FROM dec_2020_users d
+    JOIN sf_events s
+    ON d.account_id = s.account_id AND d.user_id = s.user_id
+    WHERE s.date > '2020-12-31'
+),
+--Identifies users from January 2021 who were active in any future month (after January 2021).
+retained_jan_users AS (
+    SELECT j.account_id, j.user_id
+    FROM jan_2021_users j
+    JOIN sf_events s
+    ON j.account_id = s.account_id AND j.user_id = s.user_id
+    WHERE s.date > '2021-01-31'
+),
+--Calculates the retention rate for December 2020 by dividing the number of retained users by the total number of active users in December 2020
+dec_retention_rate AS (
+    SELECT d.account_id, 
+       COUNT(DISTINCT r.user_id) * 1.0 / COUNT(DISTINCT d.user_id) AS retention_rate
+    FROM dec_2020_users d
+    LEFT JOIN retained_dec_users r
+    ON d.account_id = r.account_id AND d.user_id = r.user_id
+    GROUP BY d.account_id
+),
+--Calculates the retention rate for January 2021 by dividing the number of retained users by the total number of active users in January 2021.
+jan_retention_rate AS (
+    SELECT j.account_id, 
+      COUNT(DISTINCT r.user_id) * 1.0 / COUNT(DISTINCT j.user_id) AS retention_rate
+    FROM jan_2021_users j
+    LEFT JOIN retained_jan_users r
+    ON j.account_id = r.account_id AND j.user_id = r.user_id
+    GROUP BY j.account_id
+)
+--Computes the ratio of the January 2021 retention rate to the December 2020 retention rate for each account.
+SELECT d.account_id, 
+   ROUND(j.retention_rate / d.retention_rate) AS retention_rate_ratio
+FROM dec_retention_rate d
+JOIN jan_retention_rate j
+ON d.account_id = j.account_id;
+
+/*
+https://platform.stratascratch.com/coding/2104-user-with-most-approved-flags?code_type=1
+
+Which user flagged the most distinct videos that ended up approved by YouTube? Output, in one column, their full name or names in case of a tie. In the user's full name, include a space between the first and the last name.
+*/
+
+
+CREATE TABLE user_flags (
+    user_firstname VARCHAR(255),
+    user_lastname VARCHAR(255),
+    video_id VARCHAR(255),
+    flag_id VARCHAR(255)
+);
+
+-- Insert statements
+INSERT INTO user_flags (user_firstname, user_lastname, video_id, flag_id) VALUES
+('Richard', 'Hasson', 'y6120QOlsfU', '0cazx3'),
+('Mark', 'May', 'Ct6BUPvE2sM', '1cn76u'),
+('Gina', 'Korman', 'dQw4w9WgXcQ', '1i43zk'),
+('Mark', 'May', 'Ct6BUPvE2sM', '1n0vef'),
+('Mark', 'May', 'jNQXAC9IVRw', '1sv6ib'),
+('Gina', 'Korman', 'dQw4w9WgXcQ', '20xekb'),
+('Mark', 'May', '5qap5aO4i9A', '4cvwuv');
+
+-- SOL- 
+with user_no_of_flag as (
+select CONCAT(user_firstname, ' ', user_lastname) username, count(distinct video_id) as no_of_flag from user_flags 
+where flag_id is not null
+group by CONCAT(user_firstname, ' ', user_lastname) ),
+user_ranking as(
+select username, 
+dense_rank() over(order by no_of_flag desc) rnk from user_no_of_flag)
+
+select username from user_ranking where rnk=1 order by username;
+
+/*
+
+https://platform.stratascratch.com/coding/2099-election-results?code_type=1
+
+The election is conducted in a city and everyone can vote for one or more candidates, or choose not to vote at all. Each person has 1 vote so if they vote for multiple candidates, their vote gets equally split across these candidates. For example, if a person votes for 2 candidates, these candidates receive an equivalent of 0.5 vote each.
+Find out who got the most votes and won the election. Output the name of the candidate or multiple names in case of a tie. To avoid issues with a floating-point error you can round the number of votes received by a candidate to 3 decimal places.
+*/
+
+CREATE TABLE voting_results (
+    voter VARCHAR(255),
+    candidate VARCHAR(255)
+);
+
+-- Insert statements
+INSERT INTO voting_results (voter, candidate) VALUES
+('Kathy', 'Charles'),
+('Ryan', 'Charles'),
+('Christine', 'Charles'),
+('Kathy', 'Benjamin'),
+('Christine', 'Anthony'),
+('Paul', 'Anthony'),
+('Anthony', 'Edward'),
+('Ryan', 'Charles');
+
+-- Select statement to view the table
+with get_voter_split as(
+SELECT voter, 
+1*1.0/count(1) as no_of_votes FROM voting_results where candidate is not null  group by 1),
+candidate_vote_count as (
+select candidate,
+sum(no_of_votes) total_votes from voting_results vr 
+join 
+get_voter_split vs
+on
+vr.voter=vs.voter
+group by vr.candidate
+)
+select candidate from candidate_vote_count order by total_votes desc limit 1
+
 
 
