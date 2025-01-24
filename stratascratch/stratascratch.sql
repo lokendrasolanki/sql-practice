@@ -785,7 +785,7 @@ SELECT voter,
 candidate_vote_count as (
 select candidate,
 sum(no_of_votes) total_votes from voting_results vr 
-join 
+inner join 
 get_voter_split vs
 on
 vr.voter=vs.voter
