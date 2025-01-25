@@ -793,5 +793,113 @@ group by vr.candidate
 )
 select candidate from candidate_vote_count order by total_votes desc limit 1
 
+/*
+https://platform.stratascratch.com/coding/2102-flags-per-video?code_type=1
 
+For each video, find how many unique users flagged it. A unique user can be identified using the combination of their first name and last name. Do not consider rows in which there is no flag ID.
+*/
+
+
+CREATE TABLE user_flags (
+    user_firstname VARCHAR(255),
+    user_lastname VARCHAR(255),
+    video_id VARCHAR(255),
+    flag_id VARCHAR(255),
+    PRIMARY KEY (user_firstname, user_lastname, video_id, flag_id)
+);
+
+-- Insert statements
+INSERT INTO user_flags (user_firstname, user_lastname, video_id, flag_id) VALUES
+('Richard', 'Hasson', 'y6120QOlsfU', '0cazx3'),
+('Mark', 'May', 'Ct6BUPvE2sM', '1cn76u'),
+('Gina', 'Korman', 'dQw4w9WgXcQ', '1i43zk'),
+('Mark', 'May', 'Ct6BUPvE2sM', '1n0vef'),
+('Mark', 'May', 'jNQXAC9IVRw', '1sv6ib'),
+('Gina', 'Korman', 'dQw4w9WgXcQ', '20xekb'),
+('Mark', 'May', '5qap5aO4i9A', '4cvwuv');
+
+-- Select statement to view the table
+SELECT video_id, count (distinct CONCAT(user_firstname,' ',  user_lastname))  num_unique_users FROM user_flags where flag_id is not null
+group by  video_id
+
+/*
+https://platform.stratascratch.com/coding/9610-find-students-with-a-median-writing-score?code_type=1
+
+Identify the IDs of students who scored exactly at the median for the SAT writing section.
+*/
+
+CREATE TABLE sat_scores (
+    school VARCHAR(255),
+    teacher VARCHAR(255),
+    student_id INT,
+    sat_writing INT,
+    sat_verbal INT,
+    sat_math INT,
+    hrs_studied INT,
+    id INT,
+    average_sat INT,
+    love VARCHAR(255)
+);
+
+-- Insert statements
+INSERT INTO sat_scores (school, teacher, student_id, sat_writing, sat_verbal, sat_math, hrs_studied, id, average_sat, love) VALUES
+('Washington HS', 'Frederickson', 1, 583, 307, 528, 190, 1, 583, NULL),
+('Washington HS', 'Frederickson', 2, 401, 791, 248, 149, 2, 401, NULL),
+('Washington HS', 'Frederickson', 3, 523, 445, 756, 166, 3, 523, NULL),
+('Washington HS', 'Frederickson', 4, 306, 269, 327, 137, 4, 306, NULL),
+('Washington HS', 'Frederickson', 5, 300, 539, 743, 115, 5, 300, NULL),
+('Washington HS', 'Frederickson', 6, 213, 500, 771, 173, 6, 213, NULL),
+('Washington HS', 'Frederickson', 7, 548, 683, 740, 47, 7, 548, NULL),
+('Washington HS', 'Frederickson', 8, 314, 503, 341, 174, 8, 314, NULL),
+('Washington HS', 'Frederickson', 9, 401, 630, 666, 111, 9, 401, NULL);
+
+with cte as(
+SELECT student_id, sat_writing, row_number() over(order by sat_writing) rn,
+count(*) over() total_rows FROM sat_scores 
+)
+SELECT student_id from cte where sat_writing =(
+select avg(sat_writing) from cte
+where rn in (
+(total_rows+1)/2,
+(total_rows+1)/2
+)) order by student_id
+
+/*
+https://platform.stratascratch.com/coding/9650-find-the-top-10-ranked-songs-in-2010?code_type=1
+
+What were the top 5 ranked songs in 2010?
+Output the rank, group name, and song name but do not show the same song twice.
+Sort the result based on the year_rank in ascending order.
+*/
+
+
+CREATE TABLE billboard_top_100_year_end (
+    year INT,
+    year_rank INT,
+    group_name VARCHAR(255),
+    artist VARCHAR(255),
+    song_name VARCHAR(255),
+    id INT PRIMARY KEY -- Assuming 'id' is the unique identifier for each song
+);
+
+-- Insert statements
+INSERT INTO billboard_top_100_year_end (year, year_rank, group_name, artist, song_name, id) VALUES
+(2010, 1, 'Ke$ha', 'Ke$ha', 'TiK ToK', 5909),
+(2010, 2, 'Lady Antebellum', 'Lady Antebellum', 'Need You Now', 5910),
+(2010, 3, 'Train', 'Train', 'Hey, Soul Sister', 5911),
+(2010, 4, 'Katy Perry feat. Snoop Dogg', 'Katy Perry', 'California Gurls', 5912),
+(2010, 4, 'Katy Perry feat. Snoop Dogg', 'Snoop Dogg', 'California Gurls', 5913),
+(2010, 5, 'Usher feat. will.i.am', 'Usher', 'OMG', 5914),
+(2010, 5, 'Usher feat. will.i.am', 'will.i.am', 'OMG', 5915),
+(2010, 6, 'B.o.B feat. Hayley Williams', 'B.o.B', 'Airplanes', 5916),
+(2010, 6, 'B.o.B feat. Hayley Williams', 'Hayley Williams', 'Airplanes', 5917),
+(2010, 7, 'Eminem feat. Rihanna', 'Eminem', 'Love The Way You Lie', 5918),
+(2010, 7, 'Eminem feat. Rihanna', 'Rihanna', 'Love The Way You Lie', 5919);
+
+-- SOL- 
+with cte as(
+select  dense_rank() over(order by year_rank) rank , group_name, song_name 
+from billboard_top_100_year_end
+where year=2010)
+select distinct * from cte  order by rank limit 5 
 
