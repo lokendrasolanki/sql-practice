@@ -903,6 +903,40 @@ from billboard_top_100_year_end
 where year=2010)
 select distinct * from cte  order by rank limit 5 
 
+/*
+https://platform.stratascratch.com/coding/9782-customer-revenue-in-march?code_type=1
 
+Calculate the total revenue from each customer in March 2019. Include only customers who were active in March 2019.
+Output the revenue along with the customer id and sort the results based on the revenue in descending order.
+*/
+
+CREATE TABLE customer_orders (
+    id INT PRIMARY KEY,
+    cust_id INT,
+    order_date DATE,
+    order_details VARCHAR(255),
+    total_order_cost DECIMAL(10, 2)
+);
+
+-- Insert statements
+INSERT INTO customer_orders (id, cust_id, order_date, order_details, total_order_cost) VALUES
+(1, 3, '2019-03-04', 'Coat', 100.00),
+(2, 3, '2019-03-01', 'Shoes', 80.00),
+(3, 3, '2019-03-07', 'Skirt', 30.00),
+(4, 7, '2019-02-01', 'Coat', 25.00),
+(5, 7, '2019-03-10', 'Shoes', 80.00),
+(6, 15, '2019-02-01', 'Boats', 100.00),
+(7, 15, '2019-01-11', 'Shirts', 60.00),
+(8, 15, '2019-03-11', 'Slipper', 20.00),
+(9, 15, '2019-03-01', 'Jeans', 80.00),
+(10, 15, '2019-03-09', 'Shirts', 50.00);
+
+-- Select statement to view the table
+with cte as (
+SELECT cust_id, sum(total_order_cost) total_revenue FROM customer_orders
+where to_char(order_date, 'yyyy-MM') = '2019-03'
+group by cust_id)
+
+select * from cte order by total_revenue desc
 
 
