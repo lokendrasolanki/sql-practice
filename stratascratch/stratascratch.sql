@@ -939,4 +939,31 @@ group by cust_id)
 
 select * from cte order by total_revenue desc
 
+/*
+ write a sql query to find for each month and country, the number of transactions and their total amount, the number of approved transations and their total amount.
+*/
+
+drop table transactions;
+create table if not exists transactions (
+id int primary key,
+country varchar(15),
+state varchar(15),
+amount int,
+trans_date date
+);
+
+insert into transactions values(1,'US','approved',1000,'2023-12-18');
+insert into transactions values(2,'US','declined',2000,'2023-12-19');
+insert into transactions values(3,'US','approved',2000,'2024-01-01');
+insert into transactions values(4,'India','approved',2000,'2023-01-07');
+
+with cte as(
+select *, to_char(trans_date, 'yyyy-MM') date_month from transactions
+)
+select country, date_month, count(*) transaction_count,
+sum(amount) trnas_total_amount,
+sum(case when state='approved' then 1 end ) approved_count,
+sum(case when state='approved' then amount end ) approved_amount
+from cte group by country, date_month
+
 
