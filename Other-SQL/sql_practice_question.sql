@@ -78,4 +78,10 @@ INSERT INTO ProductSpend (category, product, user_id, spend) VALUES
 ('home', 'furniture', 276, 599.99),
 ('home', 'decor', 456, 29.99);
 
-select * from ProductSpend
+with cte as (
+select category, product, sum(spend) total_spend from ProductSpend group by category, product),
+rank_cat as(
+select * , Dense_rank() over(partition by category order by total_spend desc) rnk from cte)
+select category, product, total_spend from rank_cat where rnk<3
+
+
