@@ -48,4 +48,28 @@ INTERSECT
 select buyer_id as fraud_user from buyer_seller_combination)
 
 select * from buyer_seller_combination where seller_id not in (select * from fraud_users) 
-and  buyer_id  not in (select * from fraud_users) 
+and  buyer_id  not in (select * from fraud_users);
+
+/*
+Find the top 3 most common letters across all the words from both the tables (ignore filename column). Output the letter along with the number of occurrences and order records in descending order based on the number of occurrences.
+*/
+
+CREATE TABLE google_file_store (contents VARCHAR(100), filename VARCHAR(100));
+
+INSERT INTO google_file_store (contents, filename) 
+VALUES ('This is a sample content with some words.', 'file1.txt'), ('Another file with more words and letters.', 'file2.txt'), ('Text for testing purposes with various characters.', 'file3.txt');
+
+CREATE TABLE google_word_lists ( words1 VARCHAR(100), words2 VARCHAR(100));
+
+INSERT INTO google_word_lists (words1, words2) 
+VALUES ('apple banana cherry', 'dog elephant fox'), ('grape honeydew kiwi', 'lemon mango nectarine'), ('orange papaya quince', 'raspberry strawberry tangerine');
+
+with cte as (
+select  Upper(unnest(regexp_split_to_array(contents,''))) words from google_file_store
+union all
+select upper(unnest(regexp_split_to_array(words1,''))) words from google_word_lists
+union all
+select  upper(unnest(regexp_split_to_array(words2,''))) words from google_word_lists)
+select words, count(*) from cte 
+where words != ' ' 
+group by words order by count(*) desc limit 3
