@@ -967,3 +967,86 @@ sum(case when state='approved' then amount end ) approved_amount
 from cte group by country, date_month
 
 
+/*
+https://platform.stratascratch.com/coding/9897-highest-salary-in-department?code_type=1
+
+Find the employee with the highest salary per department.
+Output the department name, employee's first name along with the corresponding salary.
+*/
+
+CREATE TABLE employee (
+  id INT PRIMARY KEY,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  age INT,
+  sex CHAR(1),
+  employee_title VARCHAR(255),
+  department VARCHAR(255),
+  salary DECIMAL(10, 2),
+  target DECIMAL(10, 2),
+  bonus DECIMAL(10, 2),
+  email VARCHAR(255),
+  city VARCHAR(255),
+  address VARCHAR(255),
+  manager_id INT
+);
+
+-- Insert the first employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (1, 'Richerd', 'Gear', 57, 'M', 'Manager', 'Management', 250000.00, 0.00, 300.00, 'Richerd@company.com', 'Alabama', NULL, NULL); 
+
+-- Insert the second employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (5, 'Max', 'George', 26, 'M', 'Sales', 'Sales', 1300.00, 200.00, 150.00, 'Max@company.com', 'California', '2638 Richards Avenue', 1); 
+
+-- Insert the third employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (10, 'Jennifer', 'Dion', 34, 'F', 'Sales', 'Sales', 1000.00, 200.00, 150.00, 'Jennifer@company.com', 'Alabama', NULL, 1); 
+
+-- Insert the fourth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (11, 'Katty', 'Bond', 56, 'F', 'Manager', 'Management', 150000.00, 0.00, 300.00, 'Katty@company.com', 'Arizona', NULL, NULL); 
+
+-- Insert the fifth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (13, 'George', 'Joe', 50, 'M', 'Manager', 'Management', 100000.00, 0.00, 300.00, 'George@company.com', 'Florida', '1003 Wyatt Street', NULL); 
+
+-- Insert the sixth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (18, 'Laila', 'Mark', 26, 'F', 'Sales', 'Sales', 1000.00, 200.00, 150.00, 'Laila@company.com', 'Florida', '3655 Spirit Drive', 13); 
+
+-- Insert the seventh employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (19, 'Suzan', 'Lee', 34, 'F', 'Sales', 'Sales', 1300.00, 200.00, 150.00, 'Suzan@company.com', 'Florida', '1275 Monroe Avenue', 13); 
+
+-- Insert the eighth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (20, 'Sarrah', 'Bicky', 31, 'F', 'Senior Sales', 'Sales', 2000.00, 200.00, 150.00, 'Sarrah@company.com', 'Florida', '1176 Tyler Avenue', 19); 
+
+-- Insert the ninth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (21, 'Suzan', 'Lee', 34, 'F', 'Sales', 'Sales', 1300.00, 200.00, 150.00, 'Suzan@company.com', 'Florida', '1275 Monroe Avenue', 19); 
+
+-- Insert the tenth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (22, 'Mandy', 'John', 31, 'F', 'Sales', 'Sales', 1300.00, 200.00, 150.00, 'Mandy@company.com', 'Florida', '2510 Maryland Avenue', 19); 
+
+-- Insert the eleventh employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (23, 'Britney', 'Berry', 45, 'F', 'Sales', 'Sales', 1200.00, 200.00, 100.00, 'Britney@company.com', 'Florida', '3946 Steve Hunt Road', 19); 
+
+-- Insert the twelfth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (25, 'Jack', 'Mick', 29, 'M', 'Sales', 'Sales', 1300.00, 200.00, 100.00, 'Jack@company.com', 'Hawaii', '3762 Stratford Drive', 19); 
+
+-- Insert the thirteenth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (26, 'Ben', 'Ten', 43, 'M', 'Sales', 'Sales', 1300.00, 150.00, 100.00, 'Ben@company.com', 'Hawaii', '3055 Indiana Avenue', 19); 
+
+-- Insert the fourteenth employee
+INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, department, salary, target, bonus, email, city, address, manager_id)
+VALUES (27, 'Tom', 'Fridy', 32, 'M', 'Sales', 'Sales', 1200.00, 200.00, 150.00, 'Tom@company.com', 'Hawaii', '801 Stratford Drive', 19);
+
+with cte as(
+select department, first_name, salary, dense_rank() over(partition by department order by salary desc) rnk from employee )
+select department, first_name, salary from cte where rnk = 1;
