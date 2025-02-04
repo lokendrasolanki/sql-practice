@@ -98,7 +98,7 @@ CREATE TABLE user_activity (
     timestamp TIMESTAMP,
     action VARCHAR(255)
 );
-
+truncate table user_activity;
 -- Insert the data
 INSERT INTO user_activity (user_id, timestamp, action)
 VALUES
@@ -108,6 +108,9 @@ VALUES
     ('U2', '2024-12-30 11:00:00', 'LOGIN'),
     ('U2', '2024-12-30 11:15:00', 'BROWSE'),
     ('U2', '2024-12-30 11:30:00', 'LOGOUT'),
+	('U1', '2024-11-30 09:00:00', 'LOGIN'),
+    ('U1', '2024-11-30 09:05:00', 'BROWSE'),
+    ('U1', '2024-11-30 09:20:00', 'LOGOUT'),
     ('U1', '2024-12-30 10:20:00', 'LOGOUT'),  -- Duplicate entry will be ignored
     (NULL, '2024-12-30 12:00:00', 'LOGIN'),  -- Missing user_id will be inserted as is
     ('U3', NULL, 'LOGOUT');             -- Missing timestamp will be inserted as is
@@ -118,7 +121,7 @@ with cte as(
 select *, 
 row_number() over(partition by user_id, timestamp, action ) rn 
 from user_activity)
-select * from cte rn where = 1;
+select * from cte  where rn= 1;
 
 -- SOl-2:
 -- 2 Handle any missing values appropriately.
@@ -129,8 +132,36 @@ and action is not null;
 
 -- SOL-3
 -- 3. Determine the top 3 most frequent activity_type for each user_id
-select * from user_activity;
+with cte as(
+select *, 
+row_number() over(partition by user_id, timestamp, action ) rn 
+from user_activity),
+clean_cte as(
+select user_id, action, count(*) as frequent_activity
+from cte  where rn= 1 and user_id is not null 
+and  timestamp is not null  
+and action is not null
+group by user_id, action
+)
+select * from (
+select *, rank() over(partition by user_id order by frequent_activity desc) rnk from clean_cte ) c 
+where c.rnk<=3
 
+-- SOL-4
+-- 4 Calculate the time spent by each user on each activity_type
+with cte as(
+select *, 
+row_number() over(partition by user_id, timestamp, action ) rn 
+from user_activity),
+clean_cte as(
+select user_id, timestamp, action ,date(timestamp) date
+from cte  where rn= 1 and user_id is not null 
+and  timestamp is not null  
+and action is not null
+), final_cte as (
+select *, lead(timestamp) over(partition by user_id, date order by user_id, date) next_time from clean_cte )
+
+select user_id, action, next_time-timestamp time_spent from final_cte
 
 
 
