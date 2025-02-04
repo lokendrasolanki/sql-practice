@@ -84,4 +84,61 @@ rank_cat as(
 select * , Dense_rank() over(partition by category order by total_spend desc) rnk from cte)
 select category, product, total_spend from rank_cat where rnk<3
 
+/*
+# You are given a dataset of user activity logs. Each log entry contains a user_id, timestamp, and activity_type. The dataset has duplicate entries, and some entries are missing values.
+# 1. Drop Duplicate the dataset.
+# 2 Handle any missing values appropriately.
+# 3 Determine the top 3 most frequent activity_type for each user_id.
+# 4 Calculate the time spent by each user on each activity_type
+*/
+
+-- Create the user_activity table
+CREATE TABLE user_activity (
+    user_id VARCHAR(255),
+    timestamp TIMESTAMP,
+    action VARCHAR(255)
+);
+
+-- Insert the data
+INSERT INTO user_activity (user_id, timestamp, action)
+VALUES
+    ('U1', '2024-12-30 10:00:00', 'LOGIN'),
+    ('U1', '2024-12-30 10:05:00', 'BROWSE'),
+    ('U1', '2024-12-30 10:20:00', 'LOGOUT'),
+    ('U2', '2024-12-30 11:00:00', 'LOGIN'),
+    ('U2', '2024-12-30 11:15:00', 'BROWSE'),
+    ('U2', '2024-12-30 11:30:00', 'LOGOUT'),
+    ('U1', '2024-12-30 10:20:00', 'LOGOUT'),  -- Duplicate entry will be ignored
+    (NULL, '2024-12-30 12:00:00', 'LOGIN'),  -- Missing user_id will be inserted as is
+    ('U3', NULL, 'LOGOUT');             -- Missing timestamp will be inserted as is
+
+-- SOl-1
+-- 1. Drop Duplicate the dataset.
+with cte as(
+select *, 
+row_number() over(partition by user_id, timestamp, action ) rn 
+from user_activity)
+select * from cte rn where = 1;
+
+-- SOl-2:
+-- 2 Handle any missing values appropriately.
+select * from user_activity where 
+user_id is not null 
+and  timestamp is not null  
+and action is not null;
+
+-- SOL-3
+-- 3. Determine the top 3 most frequent activity_type for each user_id
+select * from user_activity;
+
+
+
+
+
+ 
+
+
+
+
+
 

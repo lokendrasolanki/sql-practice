@@ -1048,5 +1048,67 @@ INSERT INTO Employee (id, first_name, last_name, age, sex, employee_title, depar
 VALUES (27, 'Tom', 'Fridy', 32, 'M', 'Sales', 'Sales', 1200.00, 200.00, 150.00, 'Tom@company.com', 'Hawaii', '801 Stratford Drive', 19);
 
 with cte as(
-select department, first_name, salary, dense_rank() over(partition by department order by salary desc) rnk from employee )
-select department, first_name, salary from cte where rnk = 1;
+select department, first_name, salary, 
+dense_rank() over(partition by department order by salary desc) rnk 
+from employee )
+select department, first_name, salary 
+from cte 
+where rnk = 1;
+
+/*
+https://platform.stratascratch.com/coding/9881-Titanic-Survivors-and-Non--Survivors?code_type=1
+
+Make a report showing the number of survivors and non-survivors by passenger class. Classes are categorized based on the pclass value as:
+
+
+•	First class: pclass = 1
+•	Second class: pclass = 2
+•	Third class: pclass = 3
+
+
+Output the number of survivors and non-survivors by each class.
+*/
+-- Create the TitanicPassengers table
+CREATE TABLE titanic (
+    passengerid INT PRIMARY KEY,
+    survived INT, -- 0 = No, 1 = Yes
+    pclass INT, 
+    name VARCHAR(255),
+    sex VARCHAR(255),
+    age FLOAT, 
+    sibsp INT, 
+    parch INT, 
+    ticket VARCHAR(255),
+    fare DECIMAL(10, 2), 
+    cabin VARCHAR(255),
+    embarked VARCHAR(255) 
+);
+
+-- Insert the provided data
+INSERT INTO titanic (passengerid, survived, pclass, name, sex, age, sibsp, parch, ticket, fare, cabin, embarked)
+VALUES
+    (1, 0, 3, 'Braund, Mr. Owen Harris', 'male', 22.0, 1, 0, 'A/5 21171', 7.25, NULL, 'S'),
+    (2, 1, 1, 'Cumings, Mrs. John Bradley (Florence Briggs Thayer)', 'female', 38.0, 1, 0, 'PC 17599', 71.28, 'C85', 'C'),
+    (3, 1, 3, 'Heikkinen, Miss. Laina', 'female', 26.0, 0, 0, 'STON/O2. 3101282', 7.92, NULL, 'S'),
+    (4, 1, 1, 'Futrelle, Mrs. Jacques Heath (Lily May Peel)', 'female', 35.0, 1, 0, '113803', 53.10, 'C123', 'S'),
+    (5, 0, 3, 'Allen, Mr. William Henry', 'male', 35.0, 0, 0, '373450', 8.05, NULL, 'S'),
+    (6, 0, 3, 'Moran, Mr. James', 'male', NULL, 0, 0, '330877', 8.46, NULL, 'Q'),
+    (7, 0, 1, 'McCarthy, Mr. Timothy J', 'male', 54.0, 0, 0, '17463', 51.86, 'E46', 'S'),
+    (8, 0, 3, 'Palsson, Master. Gosta Leonard', 'male', 2.0, 3, 1, '349909', 21.07, NULL, 'S'),
+    (9, 1, 3, 'Johnson, Mrs. Oscar W (Elisabeth Vilhelmina Berg)', 'female', 27.0, 0, 2, '347742', 11.13, NULL, 'S'),
+    (10, 1, 2, 'Nasser, Mrs. Nicholas (Adele Achem)', 'female', 14.0, 1, 0, '237736', 30.07, NULL, 'C');
+
+-- SOL-
+with cte as (
+SELECT survived, 
+case when pclass=1 then pclass end  first_class,
+case when pclass=2 then pclass end second_class,
+case when pclass=3 then pclass end third_class
+FROM titanic)
+select survived, 
+count(first_class) first_class, 
+count(second_class) second_class, 
+count(third_class) third_class
+from cte group by survived;
+
+
