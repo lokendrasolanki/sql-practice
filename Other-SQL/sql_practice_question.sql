@@ -227,5 +227,64 @@ select * from employees e
 cross join cte c 
 where c.avg_sal > e.salary
 
+/*
+We need to have separate record for each and every Customer.
+*/
 
+-- Create Table Script
+CREATE TABLE IF NOT EXISTS country_user (
+    Names text,
+    Country text
+);
+
+-- Insert Script
+INSERT INTO country_user (Names, Country)
+VALUES ('John,Smith', 'Canada'), ('Mike,David', 'USA');
+
+select country, unnest(string_to_array(Names,',')) from country_user;
+
+/*
+We need to find total numbers of 50s and 100s for palyers.
+*/
+
+
+-- Create the players table
+CREATE TABLE players (
+    player TEXT,
+    runs INTEGER,
+    "50s/100s" TEXT
+);
+
+-- Insert data into the players table
+INSERT INTO players (player, runs, "50s/100s") VALUES
+('Sachin-IND', 18694, '93/49'),
+('Ricky-AUS', 11274, '66/31'),
+('Lara-WI', 10222, '45/21'),
+('Rahul-IND', 10355, '95/11'),
+('Jhonty-SA', 7051, '43/5'),
+('Hayden-AUS', 8722, '67/19');
+
+-- Create the countries table
+CREATE TABLE countries (
+    SRT TEXT,
+    country TEXT
+);
+
+-- Insert data into the countries table
+INSERT INTO countries (SRT, country) VALUES
+('IND', 'India'),
+('AUS', 'Australia'),
+('WI', 'WestIndies'),
+('SA', 'SouthAfrica');
+
+with players_cte as(
+select *, split_part(player,'-', 1) as player_name,  
+split_part(player,'-', 2) as SRT,
+split_part("50s/100s",'/', 2) as century,
+split_part("50s/100s",'/', 1) as fifty
+from players)
+
+select player_name, c.country, runs, (cast(century as int) + cast(fifty as int)) as total from players_cte p
+join countries c
+on c.SRT = p.SRT
 
