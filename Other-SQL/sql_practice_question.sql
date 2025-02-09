@@ -163,13 +163,69 @@ select *, lead(timestamp) over(partition by user_id, date order by user_id, date
 
 select user_id, action, next_time-timestamp time_spent from final_cte
 
+/*
+Part 1: Find the top 3 highest-paid employees in 
+              each department.
+Part 2: Find the average salary of employees hired 
+               in the last 5 years.
+Part 3: Find the employees whose salry is less than 
+               the average salary of employees hired in 
+               the last 5 years.
+*/
+-- Query to create table:
+CREATE TABLE Departments (
+    DepartmentID INT PRIMARY KEY,
+    DepartmentName VARCHAR(100)
+);
 
+CREATE TABLE Employees (
+    EmployeeID INT PRIMARY KEY,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    DepartmentID INT,
+    Salary DECIMAL(10, 2),
+    DateHired DATE,
+    FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
 
+-- Insert data
+INSERT INTO Departments (DepartmentID, DepartmentName) VALUES
+(1, 'HR'),
+(2, 'Engineering'),
+(3, 'Sales');
 
- 
+INSERT INTO Employees (EmployeeID, FirstName, LastName, DepartmentID, Salary, DateHired) VALUES
+(1, 'Alice', 'Smith', 1, 50000, '2020-01-15'),
+(2, 'Bob', 'Johnson', 1, 60000, '2018-03-22'),
+(3, 'Charlie', 'Williams', 2, 70000, '2019-07-30'),
+(4, 'David', 'Brown', 2, 80000, '2017-11-11'),
+(5, 'Eve', 'Davis', 3, 90000, '2021-02-25'),
+(6, 'Frank', 'Miller', 3, 55000, '2020-09-10'),
+(7, 'Grace', 'Wilson', 2, 75000, '2016-04-05'),
+(8, 'Henry', 'Moore', 1, 65000, '2022-06-17');
 
+-- Part 1: Find the top 3 highest-paid employees in each department
 
+with cte as(
+Select *, dense_rank() over(partition by d.DepartmentID order by e.salary desc ) rnk from employees e 
+join Departments d
+on e.DepartmentID = d.DepartmentID
+)
+Select firstname, lastname, DepartmentName, salary from cte where rnk<4
 
+-- Part 2: Find the average salary of employees hired in the last 5 years.
+
+select avg(salary) from employees where date_part('year', DateHired) >=2019
+
+-- Part 3: Find the employees whose salry is less
+-- than the average salary of employees hired in  the last 5 years.
+
+with cte as(
+select avg(salary) avg_sal from employees where date_part('year', DateHired) >=2019
+)
+select * from employees e 
+cross join cte c 
+where c.avg_sal > e.salary
 
 
 
