@@ -288,3 +288,59 @@ select player_name, c.country, runs, (cast(century as int) + cast(fifty as int))
 join countries c
 on c.SRT = p.SRT
 
+
+/*
+MEESHO - 
+
+MEESHO HACKERRANK ONLINE SOL TEST
+
+find how many products falls into customer budget along with list of products
+--In case of clash choose the less costly product
+
+*/
+
+create table products
+(
+product_id varchar(20) ,
+cost int
+);
+insert into products values ('P1',200),('P2',300),('P3',500),('P4',800);
+
+create table customer_budget
+(
+customer_id int,
+budget int
+);
+
+insert into customer_budget values (100,400),(200,800),(300,1500);
+
+-- SOL - 
+with product as (
+select *, sum(cost) over(order by cost) running_sum from products
+)
+select customer_id, budget, 
+STRING_AGG(p.product_id, ', ') list_of_products, 
+count(customer_id) no_of_products from customer_budget c
+left join product p
+on p.running_sum<=c.budget
+group by customer_id, budget
+order by customer_id
+
+/*
+we need to segregate first name , middle name and last name from the customer name. 
+*/
+
+create table customer_names  (customer_name varchar(30));
+insert into customer_names values ('Lokendra Singh')
+,('Lokendra Singh Solanki')
+,('Michael'); 
+
+with cte as (
+select *, string_to_array(customer_name, ' ') as names from customer_names)
+select 
+names[1]  as  first_name,
+names[2] as secound_name,
+names[3]  as last_name 
+from cte
+
+
