@@ -62,7 +62,7 @@ select b.*, case when b.total_balls!=0 then
 Round((b.batsman_runs*1.0/b.total_balls)*100,2) end  as SR , 
 w.bowler ,w.dismissal_kind, w.fielder from batting_details_cte b
 left join wicket_cte w on b.match_id=w.match_id
-and b.batter=w.player_dismissed
+and b.batter=w.player_dismissed;
 
 -- get bowler stats
 
@@ -85,4 +85,9 @@ from deliveries
 group by bowler, match_id, batting_team, bowling_team)
 select *, 
 case when total_overs!= 0 then trunc(runs *1.0/total_overs, 2 ) end ECON 
-from bowler_stats_cte 
+from bowler_stats_cte;
+
+-- get who scored most runs in ipl
+select batter, sum(batsman_runs)  batsman_runs from deliveries
+group by batter order by 
+batsman_runs desc
