@@ -471,4 +471,32 @@ WHERE
 	AND S.DESTINATION = S1.SOURCE;
 
 
+--- Q5 : Ungroup the given input data --- 
+
+drop table if exists travel_items;
+create table travel_items
+(
+	id              int,
+	item_name       varchar(50),
+	total_count     int
+);
+insert into travel_items values (1, 'Water Bottle', 2);
+insert into travel_items values (2, 'Tent', 1);
+insert into travel_items values (3, 'Apple', 4);
+
+--SOL-
+with RECURSIVE cte as(
+select id, item_name, total_count,  1 as level
+from travel_items
+UNION ALL
+select c.id, c.item_name, c.total_count - 1,  2 as level
+from cte c 
+inner join travel_items t
+on c.id = t.id and c.item_name = t.item_name
+where c.total_count>1
+)
+select * from cte ;
+
+
+
 
