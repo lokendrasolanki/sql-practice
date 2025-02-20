@@ -533,3 +533,153 @@ select * from matches t
  join matches t1 
 on t.rn<>t1.rn;
 
+--- Q8: Find the hierarchy --- 
+
+drop TABLE IF EXISTS emp_details;
+CREATE TABLE emp_details
+    (
+        id           int PRIMARY KEY,
+        name         varchar(100),
+        manager_id   int,
+        salary       int,
+        designation  varchar(100)
+    );
+INSERT INTO emp_details VALUES (1,  'Shripadh', NULL, 10000, 'CEO');
+INSERT INTO emp_details VALUES (2,  'Satya', 5, 1400, 'Software Engineer');
+INSERT INTO emp_details VALUES (3,  'Jia', 5, 500, 'Data Analyst');
+INSERT INTO emp_details VALUES (4,  'David', 5, 1800, 'Data Scientist');
+INSERT INTO emp_details VALUES (5,  'Michael', 7, 3000, 'Manager');
+INSERT INTO emp_details VALUES (6,  'Arvind', 7, 2400, 'Architect');
+INSERT INTO emp_details VALUES (7,  'Asha', 1, 4200, 'CTO');
+INSERT INTO emp_details VALUES (8,  'Maryam', 1, 3500, 'Manager');
+INSERT INTO emp_details VALUES (9,  'Reshma', 8, 2000, 'Business Analyst');
+INSERT INTO emp_details VALUES (10, 'Akshay', 8, 2500, 'Java Developer');
+
+with recursive  cte as (
+select * from emp_details where name ='Asha'
+union all
+select e.* from  emp_details e 
+Inner join 
+cte c
+on 
+c.id=e.manager_id
+)
+select * from cte
+
+
+
+--- Q9: Find difference in average sales --- 
+
+drop table Sales_order;
+create table Sales_order
+(
+    order_number        bigserial primary key,
+    quantity_ordered    int check (quantity_ordered > 0),
+    price_each          float,
+    sales               float,
+    order_date          date,
+    status              varchar(15),
+    qtr_id              int check (qtr_id between 1 and 4),
+    month_id            int check (month_id between 1 and 12),
+    year_id             int,
+    Product             varchar(20) ,
+    customer            varchar(20) ,
+    deal_size           varchar(10) check (deal_size in ('Small', 'Medium', 'Large'))
+);
+alter table Sales_order add constraint chk_ord_sts
+check (status in ('Cancelled', 'Disputed', 'In Process', 'On Hold', 'Resolved', 'Shipped'));
+
+
+
+
+insert into sales_order values (DEFAULT,'30','95.7','2871',to_date('2/24/2003','mm/dd/yyyy'),'Shipped','1','2','2003','S10_1678','C1','Small');
+insert into sales_order values (DEFAULT,'34','81.35','2765.9',to_date('05/07/2003','mm/dd/yyyy'),'Shipped','2','5','2003','S10_1678','C2','Small');
+insert into sales_order values (DEFAULT,'41','94.74','3884.34',to_date('07/01/2003','mm/dd/yyyy'),'Shipped','3','7','2003','S10_1678','C3','Medium');
+insert into sales_order values (DEFAULT,'45','83.26','3746.7',to_date('8/25/2003','mm/dd/yyyy'),'Shipped','3','8','2003','S10_1678','C4','Medium');
+insert into sales_order values (DEFAULT,'49','100','5205.27',to_date('10/10/2003','mm/dd/yyyy'),'Shipped','4','10','2003','S10_1678','C5','Medium');
+insert into sales_order values (DEFAULT,'36','96.66','3479.76',to_date('10/28/2003','mm/dd/yyyy'),'Shipped','4','10','2003','S10_1678','C6','Medium');
+insert into sales_order values (DEFAULT,'29','86.13','2497.77',to_date('11/11/2003','mm/dd/yyyy'),'Shipped','4','11','2003','S10_1678','C7','Small');
+insert into sales_order values (DEFAULT,'48','100','5512.32',to_date('11/18/2003','mm/dd/yyyy'),'Shipped','4','11','2003','S10_1678','C8','Medium');
+insert into sales_order values (DEFAULT,'22','98.57','2168.54',to_date('12/01/2003','mm/dd/yyyy'),'Shipped','4','12','2003','S10_1678','C9','Small');
+insert into sales_order values (DEFAULT,'41','100','4708.44',to_date('1/15/2004','mm/dd/yyyy'),'Shipped','1','1','2004','S10_1678','C10','Medium');
+insert into sales_order values (DEFAULT,'37','100','3965.66',to_date('2/20/2004','mm/dd/yyyy'),'Shipped','1','2','2004','S10_1678','C11','Medium');
+insert into sales_order values (DEFAULT,'23','100','2333.12',to_date('04/05/2004','mm/dd/yyyy'),'Shipped','2','4','2004','S10_1678','C12','Small');
+insert into sales_order values (DEFAULT,'28','100','3188.64',to_date('5/18/2004','mm/dd/yyyy'),'Shipped','2','5','2004','S10_1678','C13','Medium');
+insert into sales_order values (DEFAULT,'34','100','3676.76',to_date('6/28/2004','mm/dd/yyyy'),'Shipped','2','6','2004','S10_1678','C14','Medium');
+insert into sales_order values (DEFAULT,'45','92.83','4177.35',to_date('7/23/2004','mm/dd/yyyy'),'Shipped','3','7','2004','S10_1678','C15','Medium');
+insert into sales_order values (DEFAULT,'36','100','4099.68',to_date('8/27/2004','mm/dd/yyyy'),'Shipped','3','8','2004','S10_1678','C16','Medium');
+insert into sales_order values (DEFAULT,'23','100','2597.39',to_date('9/30/2004','mm/dd/yyyy'),'Shipped','3','9','2004','S10_1678','C17','Small');
+insert into sales_order values (DEFAULT,'41','100','4394.38',to_date('10/15/2004','mm/dd/yyyy'),'Shipped','4','10','2004','S10_1678','C18','Medium');
+insert into sales_order values (DEFAULT,'46','94.74','4358.04',to_date('11/02/2004','mm/dd/yyyy'),'Shipped','4','11','2004','S10_1678','C19','Medium');
+insert into sales_order values (DEFAULT,'42','100','4396.14',to_date('11/15/2004','mm/dd/yyyy'),'Shipped','4','11','2004','S10_1678','C1','Medium');
+insert into sales_order values (DEFAULT,'41','100','7737.93',to_date('11/24/2004','mm/dd/yyyy'),'Shipped','4','11','2004','S10_1678','C20','Large');
+insert into sales_order values (DEFAULT,'20','72.55','1451',to_date('12/17/2004','mm/dd/yyyy'),'Shipped','4','12','2004','S10_1678','C21','Small');
+insert into sales_order values (DEFAULT,'21','34.91','733.11',to_date('02/03/2005','mm/dd/yyyy'),'Shipped','1','2','2005','S10_1678','C15','Small');
+insert into sales_order values (DEFAULT,'42','76.36','3207.12',to_date('03/03/2005','mm/dd/yyyy'),'Shipped','1','3','2005','S10_1678','C22','Medium');
+insert into sales_order values (DEFAULT,'24','100','2434.56',to_date('04/08/2005','mm/dd/yyyy'),'Shipped','2','4','2005','S10_1678','C23','Small');
+insert into sales_order values (DEFAULT,'66','100','7516.08',to_date('5/13/2005','mm/dd/yyyy'),'Disputed','2','5','2005','S10_1678','C24','Large');
+insert into sales_order values (DEFAULT,'26','100','5404.62',to_date('1/29/2003','mm/dd/yyyy'),'Shipped','1','1','2003','S10_1949','C18','Medium');
+insert into sales_order values (DEFAULT,'29','100','7209.11',to_date('3/24/2003','mm/dd/yyyy'),'Shipped','1','3','2003','S10_1949','C25','Large');
+insert into sales_order values (DEFAULT,'38','100','7329.06',to_date('5/28/2003','mm/dd/yyyy'),'Shipped','2','5','2003','S10_1949','C26','Large');
+insert into sales_order values (DEFAULT,'37','100','7374.1',to_date('7/24/2003','mm/dd/yyyy'),'Shipped','3','7','2003','S10_1949','C6','Large');
+insert into sales_order values (DEFAULT,'45','100','10993.5',to_date('9/19/2003','mm/dd/yyyy'),'Shipped','3','9','2003','S10_1949','C27','Large');
+insert into sales_order values (DEFAULT,'21','100','4860.24',to_date('10/20/2003','mm/dd/yyyy'),'Shipped','4','10','2003','S10_1949','C28','Medium');
+insert into sales_order values (DEFAULT,'34','100','8014.82',to_date('11/06/2003','mm/dd/yyyy'),'Shipped','4','11','2003','S10_1949','C29','Large');
+insert into sales_order values (DEFAULT,'23','100','5372.57',to_date('11/13/2003','mm/dd/yyyy'),'Shipped','4','11','2003','S10_1949','C30','Medium');
+insert into sales_order values (DEFAULT,'42','100','7290.36',to_date('11/25/2003','mm/dd/yyyy'),'Shipped','4','11','2003','S10_1949','C31','Large');
+insert into sales_order values (DEFAULT,'47','100','9064.89',to_date('12/05/2003','mm/dd/yyyy'),'Shipped','4','12','2003','S10_1949','C32','Large');
+insert into sales_order values (DEFAULT,'35','100','6075.3',to_date('1/29/2004','mm/dd/yyyy'),'Shipped','1','1','2004','S10_1949','C33','Medium');
+
+with cte2003 as (
+select month_id, year_id, to_char(order_date,'MON') mon, avg(sales) avg_sales
+from sales_order
+where year_id= 2003
+group by month_id, year_id, to_char(order_date,'MON'))
+,cte2004 as (
+select month_id, year_id,to_char(order_date,'MON') mon, avg(sales) avg_sales
+from sales_order
+where year_id= 2004
+group by month_id, year_id, to_char(order_date,'MON') )
+
+select c1.month_id,c1.mon,  c1.avg_sales-c2.avg_sales diff from cte2003 c1 
+INNER join 
+cte2004 c2
+on c1.month_id =c2.month_id
+order by c1.mon 
+/*
+--- Q10: Pizza Delivery Status --- 
+A pizza company is taking orders from customers, and each pizza ordered is added to their database as a separate order.								
+Each order has an associated status, "CREATED or SUBMITTED or DELIVERED'. 								
+An order's Final_ Status is calculated based on status as follows:								
+	1. When all orders for a customer have a status of DELIVERED, that customer's order has a Final_Status of COMPLETED.							
+	2. If a customer has some orders that are not DELIVERED and some orders that are DELIVERED, the Final_ Status is IN PROGRESS.							
+	3. If all of a customer's orders are SUBMITTED, the Final_Status is AWAITING PROGRESS.							
+	4. Otherwise, the Final Status is AWAITING SUBMISSION.							
+								
+Write a query to report the customer_name and Final_Status of each customer's arder. Order the results by customer								
+name.								
+*/
+drop table if exists cust_orders;
+create table cust_orders
+(
+cust_name   varchar(50),
+order_id    varchar(10),
+status      varchar(50)
+);
+
+insert into cust_orders values ('John', 'J1', 'DELIVERED');
+insert into cust_orders values ('John', 'J2', 'DELIVERED');
+insert into cust_orders values ('David', 'D1', 'SUBMITTED');
+insert into cust_orders values ('David', 'D2', 'DELIVERED'); -- This record is missing in question
+insert into cust_orders values ('David', 'D3', 'CREATED');
+insert into cust_orders values ('Smith', 'S1', 'SUBMITTED');
+insert into cust_orders values ('Krish', 'K1', 'CREATED');
+
+select * from cust_orders;
+
+
+
+
+
+
+
