@@ -87,7 +87,35 @@ select *,
 case when total_overs!= 0 then trunc(runs *1.0/total_overs, 2 ) end ECON 
 from bowler_stats_cte;
 
--- get who scored most runs in ipl
+-- Get top ipl scoreres 
 select batter, sum(batsman_runs)  batsman_runs from deliveries
 group by batter order by 
-batsman_runs desc
+batsman_runs desc;
+
+-- get no of centuary scored by players
+with cte as(
+select batter, sum(batsman_runs)  batsman_runs from deliveries
+group by batter, match_id order by 
+batsman_runs desc)
+select batter, count(*) total_century from cte where batsman_runs>=100
+group by batter order by total_century desc;
+
+-- most MOTM players 
+select player_of_match, count(1) total_motm from matches 
+group by player_of_match
+order by total_motm desc
+
+-- most MOTM players every season
+with cte as (
+select player_of_match, season,  count(1) total_motm,
+Rank() over(partition by season order by count(1) desc) rnk
+from matches 
+group by player_of_match, season)
+select player_of_match,season, total_motm 
+from cte where rnk=1
+
+-- Two player performance comparisions match by match 
+select * from deliveries limit 10;
+select * from matches limit 1000;
+
+
