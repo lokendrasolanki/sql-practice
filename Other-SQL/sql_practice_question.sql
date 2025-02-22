@@ -647,15 +647,15 @@ cte2004 c2
 on c1.month_id =c2.month_id
 order by c1.mon 
 /*
---- Q10: Pizza Delivery Status --- 
-A pizza company is taking orders from customers, and each pizza ordered is added to their database as a separate order.								
+--- Q10: Pizza Delivery Status ---
+A pizza company is taking orders from customers, and each pizza ordered is added to their database as a separate order.
 Each order has an associated status, "CREATED or SUBMITTED or DELIVERED'. 								
-An order's Final_ Status is calculated based on status as follows:								
-	1. When all orders for a customer have a status of DELIVERED, that customer's order has a Final_Status of COMPLETED.							
-	2. If a customer has some orders that are not DELIVERED and some orders that are DELIVERED, the Final_ Status is IN PROGRESS.							
-	3. If all of a customer's orders are SUBMITTED, the Final_Status is AWAITING PROGRESS.							
-	4. Otherwise, the Final Status is AWAITING SUBMISSION.							
-								
+An order's Final_ Status is calculated based on status as follows:						
+	1. When all orders for a customer have a status of DELIVERED, that customer's order has a Final_Status of COMPLETED.				
+	2. If a customer has some orders that are not DELIVERED and some orders that are DELIVERED, the Final_ Status is IN PROGRESS.					
+	3. If all of a customer's orders are SUBMITTED, the Final_Status is AWAITING PROGRESS.						
+	4. Otherwise, the Final Status is AWAITING SUBMISSION.
+	
 Write a query to report the customer_name and Final_Status of each customer's arder. Order the results by customer								
 name.								
 */
@@ -675,9 +675,73 @@ insert into cust_orders values ('David', 'D3', 'CREATED');
 insert into cust_orders values ('Smith', 'S1', 'SUBMITTED');
 insert into cust_orders values ('Krish', 'K1', 'CREATED');
 
-select * from cust_orders;
-
-
+SELECT
+	CUST_NAME,
+	'COMPLETED' AS STATUS
+FROM
+	CUST_ORDERS C
+WHERE
+	C.STATUS = 'DELIVERED'
+	AND NOT EXISTS (
+		SELECT
+			1
+		FROM
+			CUST_ORDERS C2
+		WHERE
+			C.CUST_NAME = C2.CUST_NAME
+			AND C2.STATUS IN ('SUBMITTED', 'CREATED')
+	)
+UNION
+SELECT
+	CUST_NAME,
+	'IN PROGRESS' AS STATUS
+FROM
+	CUST_ORDERS C
+WHERE
+	C.STATUS = 'DELIVERED'
+	AND EXISTS (
+		SELECT
+			1
+		FROM
+			CUST_ORDERS C2
+		WHERE
+			C.CUST_NAME = C2.CUST_NAME
+			AND C2.STATUS IN ('SUBMITTED', 'CREATED')
+	)
+UNION
+SELECT
+	CUST_NAME,
+	'AWAITING PROGRESS' AS STATUS
+FROM
+	CUST_ORDERS C
+WHERE
+	C.STATUS = 'SUBMITTED'
+	AND EXISTS (
+		SELECT
+			1
+		FROM
+			CUST_ORDERS C2
+		WHERE
+			C.CUST_NAME = C2.CUST_NAME
+			AND C2.STATUS IN ('DELIVERED', 'CREATED')
+	)
+UNION
+SELECT DISTINCT
+	CUST_NAME AS CUSTOMER_NAME,
+	'AWAITING SUBMISSION' AS STATUS
+FROM
+	CUST_ORDERS D
+WHERE
+	D.STATUS = 'CREATED'
+	AND NOT EXISTS (
+		SELECT
+			1
+		FROM
+			CUST_ORDERS D2
+		WHERE
+			D2.CUST_NAME = D.CUST_NAME
+			AND D2.STATUS IN ('DELIVERED', 'SUBMITTED')
+	);
 
 
 
