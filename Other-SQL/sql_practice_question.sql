@@ -744,6 +744,31 @@ WHERE
 	);
 
 
+--We need to find origin and final destination details. 
 
+CREATE TABLE Flights (cust_id INT, flight_id VARCHAR(10), origin VARCHAR(50), destination VARCHAR(50));
+
+-- Insert data into the table
+INSERT INTO Flights (cust_id, flight_id, origin, destination)
+VALUES (1, 'SG1234', 'Delhi', 'Hyderabad'), (1, 'SG3476', 'Kochi', 'Mangalore'), (1, '69876', 'Hyderabad', 'Kochi'), (2, '68749', 'Mumbai', 'Varanasi'), (2, 'SG5723', 'Varanasi', 'Delhi');
+
+with cte as (
+select f.cust_id, f.origin from Flights f
+left  join 
+Flights f1
+on f.cust_id = f1.cust_id
+and f.origin = f1.destination 
+where f1.flight_id is null),
+cte1 as(select f.cust_id, f.destination from Flights f
+left  join 
+Flights f1
+on f.cust_id = f1.cust_id
+and f.destination = f1.origin
+where f1.flight_id is null) 
+select c.cust_id, c.origin, c1.destination 
+from cte c 
+inner join cte1 c1 
+on c.cust_id=c1.cust_id
+order by c.cust_id;
 
 
