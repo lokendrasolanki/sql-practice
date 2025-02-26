@@ -771,4 +771,30 @@ inner join cte1 c1
 on c.cust_id=c1.cust_id
 order by c.cust_id;
 
+-- Find the missing weeks in a table
+CREATE TABLE sls_tbl (pid INT, sls_dt DATE, sls_amt INT );
+
+-- Insert data into the table
+INSERT INTO sls_tbl (pid, sls_dt, sls_amt)
+VALUES (201, '2024-07-11', 140), (201, '2024-07-18', 160), (201, '2024-07-25', 150), (201, '2024-08-01', 180), (201, '2024-08-15', 170), (201, '2024-08-29', 130);
+
+select * from sls_tbl;
+
+with cte as(
+ SELECT 
+ generate_series(
+        start_date::date,
+		end_date::date,
+        '1 week'::interval
+    )::date AS week_start
+FROM (
+    SELECT min(sls_dt) AS start_date, max(sls_dt) AS end_date
+   from sls_tbl
+) AS date_range)
+select c.week_start from cte c
+left join sls_tbl s
+on c.week_start = s.sls_dt
+where s.sls_dt is null
+
+
 
