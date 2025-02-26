@@ -794,7 +794,20 @@ FROM (
 select c.week_start from cte c
 left join sls_tbl s
 on c.week_start = s.sls_dt
-where s.sls_dt is null
+where s.sls_dt is null;
 
+-- split columna ans create column b as op
+CREATE TABLE testtbl (cola VARCHAR(10));
+
+-- Insert data into the table
+INSERT INTO testtbl (cola)
+VALUES ('1,2'), ('3'), ('4');
+
+with cte as (
+select unnest(string_to_array(cola,',')) colb from testtbl)
+select c2.colb cola, c1.colb colb from cte c1
+cross join cte c2
+where c1.colb< c2.colb
+order by c2.colb
 
 
