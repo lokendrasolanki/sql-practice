@@ -907,8 +907,41 @@ select *,
 row_number() over(partition by empid order by salary ) rn from cte)
 select empid, empname, salary from cte1 where rn=1
 
+/*
+Extract secound wednesday of current month
+*/
+-- with cte as (
+-- SELECT EXTRACT(isodow FROM '2024-09-01'::date) day_of_week, 
+-- date_trunc('month', DATE '2024-09-01')::date first_date
+-- )
+with cte as (
+SELECT EXTRACT(isodow FROM date_trunc('month', now())::date) day_of_week, 
+date_trunc('month', now())::date first_date
+)
+select 
+case 
+when day_of_week=1 then first_date+9
+when day_of_week=2 then first_date+8
+when day_of_week=3 then first_date+7
+when day_of_week=4 then first_date+13
+when day_of_week=5 then first_date+12
+when day_of_week=6 then first_date+11
+else first_date+10
+end
+from cte;
 
-
-
-
+--SOL-2
+with cte as(
+ SELECT 
+ generate_series(
+        date_trunc('month', now())::date,
+		date_trunc('month', (now() + interval '1 month') - INTERVAL '1 day' )::date -  INTERVAL '1 day',
+        '1 day'::interval
+    )::date AS month_dates),
+days as (
+select *,
+EXTRACT(isodow FROM  month_dates) day_of_week  from cte),
+result as (
+select *, row_number() over() rn from days where day_of_week=3)
+select month_dates from result where rn=2
 
