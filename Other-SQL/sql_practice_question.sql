@@ -821,4 +821,94 @@ order by pid)
 select pid from cte 
 group by pid, next_year
 having count(*)>=3
+/*
+Given us 2 tables, identify the no of records returned using different type of SQL Joins.
+*/
+create table table1(id int);
+insert into table1 values (1), (1),(2),(null),(null);
+
+create table table2(id int);
+insert into table2 values (1),(3),(null);
+
+--Inner Join - 2
+select * from table1 
+inner join
+table2
+on
+table1.id = table2.id
+
+--Left Join - 5
+select * from table1 
+LEFT JOIN
+table2
+on
+table1.id = table2.id
+
+--RIGHT JOIN - 4
+select * from table1 
+RIGHT JOIN
+table2
+on
+table1.id = table2.id
+
+--FULL JOIN - 7
+select * from table1 
+FULL JOIN
+table2
+on
+table1.id = table2.id
+
+--CROSS JOIN - 15
+select * from table1 
+CROSS JOIN
+table2
+
+/*
+Given us Student table, find out the total marks of top 2 subjects based on marks.
+*/
+
+create table students(sname varchar(50), sid varchar(50), marks int);
+
+insert into students values('A','X',75),('A','Y',75),('A','Z',80),('B','X',90),('B','Y',91),('B','Z',75);
+
+with cte as (
+select *, Row_number() over(partition by sname order by marks desc) rn from students)
+select sname, sum(marks)
+from cte
+where rn <=2
+group by sname;
+
+/*
+Given us Employees table, find out the max ID from Employees excluding duplicates.
+*/
+create table employees_id (id int);
+
+insert into employees_id values (2),(5),(6),(6),(7),(8),(8);
+
+select max(id) from employees_id
+group by id
+having count(*)=1
+order by id desc
+limit 1;
+/*
+*/
+create table tablea (empid int, empname varchar(50), salary int);
+create table tableb (empid int, empname varchar(50), salary int);
+
+insert into tablea values(1,'AA',1000),(2,'BB',300);
+insert into tableb values(2,'BB',400),(3,'CC',100);
+
+with cte as(
+select * from tablea
+union
+select * from tableb),
+cte1 as(
+select *, 
+row_number() over(partition by empid order by salary ) rn from cte)
+select empid, empname, salary from cte1 where rn=1
+
+
+
+
+
 
