@@ -808,6 +808,17 @@ select unnest(string_to_array(cola,',')) colb from testtbl)
 select c2.colb cola, c1.colb colb from cte c1
 cross join cte c2
 where c1.colb< c2.colb
-order by c2.colb
+order by c2.colb;
 
+--Find events with 3 or more consecutive years for each pid
+CREATE TABLE events ( pid INT, year INT ) ;
+-- Insert data into the table 
+INSERT INTO events VALUES (1, 2019), (1, 2020), (1, 2021), (2, 2022), (2, 2021),(3, 2019), (3, 2021), (3, 2022);
+
+with cte as(
+select *, year - ROW_NUMBER() over(partition by pid)  as next_year from events
+order by pid)
+select pid from cte 
+group by pid, next_year
+having count(*)>=3
 
