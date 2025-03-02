@@ -943,5 +943,17 @@ select *,
 EXTRACT(isodow FROM  month_dates) day_of_week  from cte),
 result as (
 select *, row_number() over() rn from days where day_of_week=3)
-select month_dates from result where rn=2
+select month_dates from result where rn=2;
+
+--We need to repeat the string based on the count given.
+create table test_tbl (count int, str varchar(50));
+
+insert into test_tbl values (4, 'R'), (2, 'S'), (3, 'Ra');
+
+-- SOL-1
+
+SELECT count, str, repeat(str, count) AS strcount
+FROM test_tbl;
+
+
 
