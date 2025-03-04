@@ -1007,4 +1007,21 @@ INSERT INTO userproducts (Product, Category) VALUES ('Washing machine', 'Electro
 
 with cte as(
 select category, count(*) no_of_product from userproducts group by category)
-select no_of_product, count(*) category from cte group by no_of_product
+select no_of_product, count(*) category from cte group by no_of_product;
+
+
+CREATE TABLE emps_tbl (emp_name VARCHAR(50), dept_id INT, salary INT);
+
+INSERT INTO emps_tbl VALUES ('Siva', 1, 30000), ('Ravi', 2, 40000), ('Prasad', 1, 50000), ('Sai', 2, 20000), ('Anna', 2, 10000);
+
+-- SOL-1
+select distinct dept_id , first_value(emp_name) over(partition by dept_id order by salary) from emps_tbl;
+
+-- SOL-2
+with cte as(
+select * , 
+ROW_NUMBER() over(partition by dept_id order by salary) rn
+from emps_tbl
+)
+select *  from cte where rn=1
+
