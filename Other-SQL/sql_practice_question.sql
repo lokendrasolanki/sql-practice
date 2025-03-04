@@ -955,5 +955,56 @@ insert into test_tbl values (4, 'R'), (2, 'S'), (3, 'Ra');
 SELECT count, str, repeat(str, count) AS strcount
 FROM test_tbl;
 
+/*
+Write a solution to find the prices of all products on 2019-08-16. Assume the price of all products before any change is 10.
+*/
 
+-- Create Table Statement
+CREATE TABLE ProductPrices (
+    product_name VARCHAR(255),
+    new_price INT,
+    change_date DATE
+);
 
+-- Insert Statements
+INSERT INTO ProductPrices (product_name, new_price, change_date) VALUES ('soap', 20, '2019-08-14');
+INSERT INTO ProductPrices (product_name, new_price, change_date) VALUES ('candle', 50, '2019-08-14');
+INSERT INTO ProductPrices (product_name, new_price, change_date) VALUES ('soap', 30, '2019-08-15');
+INSERT INTO ProductPrices (product_name, new_price, change_date) VALUES ('soap', 35, '2019-08-16');
+INSERT INTO ProductPrices (product_name, new_price, change_date) VALUES ('candle', 65, '2019-08-17');
+INSERT INTO ProductPrices (product_name, new_price, change_date) VALUES ('pen', 20, '2019-08-18');
+
+with date_product as (
+select * from (
+select *, rank() over(partition by product_name order by change_date desc) rnk from ProductPrices 
+where change_date<='2019-08-16') s
+where s.rnk=1
+),
+all_product as (
+select *, rank() over(partition by product_name order by change_date desc) rnk from ProductPrices
+)
+select a.product_name, 
+coalesce(d.new_price, 10) new_price from all_product a
+left join 
+date_product d
+on 
+a.product_name = d.product_name
+Where a.rnk=1;
+
+/*
+find the product count which is sale in which category 
+*/
+
+CREATE TABLE userproducts (
+    Product VARCHAR(255),
+    Category VARCHAR(255)
+);
+
+INSERT INTO userproducts (Product, Category) VALUES ('lays', 'Snacks');
+INSERT INTO userproducts (Product, Category) VALUES ('Coke', 'beverages');
+INSERT INTO userproducts (Product, Category) VALUES ('Tv', 'Electronics');
+INSERT INTO userproducts (Product, Category) VALUES ('Washing machine', 'Electronics');
+
+with cte as(
+select category, count(*) no_of_product from userproducts group by category)
+select no_of_product, count(*) category from cte group by no_of_product
