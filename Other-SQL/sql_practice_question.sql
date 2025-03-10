@@ -1023,5 +1023,29 @@ select * ,
 ROW_NUMBER() over(partition by dept_id order by salary) rn
 from emps_tbl
 )
-select *  from cte where rn=1
+select *  from cte where rn=1;
+
+-- 𝐰𝐫𝐢𝐭𝐞 𝐚 𝐪𝐮𝐞𝐫𝐲 𝐭𝐨 𝐟𝐢𝐧𝐝 𝐭𝐡𝐞 𝐭𝐨𝐭𝐚𝐥 𝐧𝐨. 𝐞𝐦𝐩𝐥𝐨𝐲𝐞𝐞 𝐩𝐫𝐞𝐬𝐞𝐧𝐭 𝐢𝐧𝐬𝐢𝐝𝐞 𝐚 𝐡𝐨𝐬𝐩𝐢𝐭𝐚𝐥.
+
+create table hospital ( emp_id int
+, action varchar(10)
+, time TIMESTAMP);
+
+insert into hospital values ('1', 'in', '2019-12-22 09:00:00');
+insert into hospital values ('1', 'out', '2019-12-22 09:15:00');
+insert into hospital values ('2', 'in', '2019-12-22 09:00:00');
+insert into hospital values ('2', 'out', '2019-12-22 09:15:00');
+insert into hospital values ('2', 'in', '2019-12-22 09:30:00');
+insert into hospital values ('3', 'out', '2019-12-22 09:00:00');
+insert into hospital values ('3', 'in', '2019-12-22 09:15:00');
+insert into hospital values ('3', 'out', '2019-12-22 09:30:00');
+insert into hospital values ('3', 'in', '2019-12-22 09:45:00');
+insert into hospital values ('4', 'in', '2019-12-22 09:45:00');
+insert into hospital values ('5', 'out', '2019-12-22 09:40:00');
+
+with cte as(
+select *, rank() over(partition by emp_id order by time desc) rnk from hospital 
+)
+select * from cte where rnk=1 and action='in';
+
 
