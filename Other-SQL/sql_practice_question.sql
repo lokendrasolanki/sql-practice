@@ -1048,4 +1048,122 @@ select *, rank() over(partition by emp_id order by time desc) rnk from hospital
 )
 select * from cte where rnk=1 and action='in';
 
+-- Find the total number of messages exchanged between each person per day.
+
+CREATE TABLE subscriber (
+ sms_date date ,
+ sender varchar(20) ,
+ receiver varchar(20) ,
+ sms_no int
+);
+-- insert some values
+INSERT INTO subscriber VALUES ('2020-4-1', 'Avinash', 'Vibhor',10);
+INSERT INTO subscriber VALUES ('2020-4-1', 'Vibhor', 'Avinash',20);
+INSERT INTO subscriber VALUES ('2020-4-1', 'Avinash', 'Pawan',30);
+INSERT INTO subscriber VALUES ('2020-4-1', 'Pawan', 'Avinash',20);
+INSERT INTO subscriber VALUES ('2020-4-1', 'Vibhor', 'Pawan',5);
+INSERT INTO subscriber VALUES ('2020-4-1', 'Pawan', 'Vibhor',8);
+INSERT INTO subscriber VALUES ('2020-4-1', 'Vibhor', 'Deepak',50);
+
+-- SOL-1
+SELECT 
+    sms_date,
+    CASE WHEN sender < receiver THEN sender ELSE receiver END AS person1,
+    CASE WHEN sender < receiver THEN receiver ELSE sender END AS person2,
+    SUM(sms_no) AS total_messages
+FROM subscriber
+GROUP BY sms_date,
+         CASE WHEN sender < receiver THEN sender ELSE receiver END,
+         CASE WHEN sender < receiver THEN receiver ELSE sender END
+ORDER BY sms_date, person1, person2;
+
+-- sol-2
+SELECT
+  sms_date,
+  LEAST(sender, receiver) AS person1,
+  GREATEST(sender, receiver) AS person2,
+  SUM(sms_no) AS total_messages
+FROM subscriber
+GROUP BY sms_date, LEAST(sender, receiver), GREATEST(sender, receiver)
+ORDER BY sms_date, person1, person2;
+
+
+--Write a query to fetch the record of brand whose amount is increasing every year.
+
+
+-->> Dataset:
+drop table if exists brands;
+create table brands
+(
+    Year    int,
+    Brand   varchar(20),
+    Amount  int
+);
+insert into brands values (2018, 'Apple', 45000);
+insert into brands values (2019, 'Apple', 35000);
+insert into brands values (2020, 'Apple', 75000);
+insert into brands values (2018, 'Samsung',	15000);
+insert into brands values (2019, 'Samsung',	20000);
+insert into brands values (2020, 'Samsung',	25000);
+insert into brands values (2018, 'Nokia', 21000);
+insert into brands values (2019, 'Nokia', 17000);
+insert into brands values (2020, 'Nokia', 14000);
+
+with cte as (
+select *, lead(amount) over(partition by brand order by year) prev_year_amount from brands
+),
+cte2 as(
+select *, case when prev_year_amount<amount then 0 
+else 1 end check_ from cte)
+select * from brands where brand not in (select brand from cte2 where check_=0);
+
+/*
+-->> Problem Statement:
+Write a SQL query to convert the given input into the expected output as shown below:
+
+-- INPUT:
+SRC         DEST        DISTANCE
+Bangalore	Hyderbad	400
+Hyderbad	Bangalore	400
+Mumbai	    Delhi	    400
+Delhi	    Mumbai	    400
+Chennai	    Pune	    400
+Pune        Chennai	    400
+
+-- EXPECTED OUTPUT:
+SRC         DEST        DISTANCE
+Bangalore	Hyderbad	400
+Mumbai	    Delhi	    400
+Chennai	    Pune	    400
+
+
+-->> Dataset:
+*/
+drop table if exists src_dest_distance;
+create table src_dest_distance
+(
+    source          varchar(20),
+    destination     varchar(20),
+    distance        int
+);
+insert into src_dest_distance values ('Bangalore', 'Hyderbad', 400);
+insert into src_dest_distance values ('Hyderbad', 'Bangalore', 400);
+insert into src_dest_distance values ('Mumbai', 'Delhi', 400);
+insert into src_dest_distance values ('Delhi', 'Mumbai', 400);
+insert into src_dest_distance values ('Chennai', 'Pune', 400);
+insert into src_dest_distance values ('Pune', 'Chennai', 400);
+
+-- SOL-1
+select distinct least(destination, source), greatest(destination, source), distance from src_dest_distance s1
+-- SOL-2
+
+with cte as(
+select *, ROW_NUMBER() OVER() AS rn from src_dest_distance
+)
+select c1.source, c1.destination, c1.distance from cte c1
+join 
+cte c2
+on  c1.rn>c2.rn
+and c1.source = c2.destination
+
 
