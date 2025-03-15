@@ -1164,6 +1164,127 @@ select c1.source, c1.destination, c1.distance from cte c1
 join 
 cte c2
 on  c1.rn>c2.rn
-and c1.source = c2.destination
+and c1.source = c2.destination;
 
+/*
+1. Write a query to calculate the 7-day Moving Average for Sales
+Data
+*/
+-- CREATE TABLE statement
+CREATE TABLE sales_data (
+    sale_date DATE,
+    sales_amount INT
+);
 
+-- INSERT statements (example data)
+INSERT INTO sales_data (sale_date, sales_amount) VALUES
+('2023-10-26', 150),
+('2023-10-27', 200),
+('2023-10-28', 180),
+('2023-10-29', 220),
+('2023-10-30', 160),
+('2023-10-31', 250),
+('2023-11-01', 190),
+('2023-11-02', 210),
+('2023-11-03', 170),
+('2023-11-04', 230);
+
+select *, 
+avg(sales_amount) over(order by sale_date rows between 6 preceding and current row ) 
+from sales_data;
+
+/*
+2. Given a table with employee in and out times, Calculate Total
+Hours Worked per Employee per Day
+*/
+
+-- CREATE TABLE statement
+CREATE TABLE attendance (
+    employee_id INT,
+    in_time TIMESTAMP,
+    out_time TIMESTAMP
+);
+
+-- INSERT statements (example data)
+INSERT INTO attendance (employee_id, in_time, out_time) VALUES
+(1, '2023-11-06 08:00:00', '2023-11-06 17:00:00'),
+(2, '2023-11-06 09:00:00', '2023-11-06 18:00:00'),
+(1, '2023-11-07 08:30:00', '2023-11-07 17:30:00'),
+(3, '2023-11-07 07:45:00', '2023-11-07 16:45:00'),
+(2, '2023-11-08 09:15:00', '2023-11-08 18:15:00'),
+(1, '2023-11-08 08:00:00', '2023-11-08 12:00:00'),
+(4, '2023-11-08 10:00:00', '2023-11-08 19:00:00'),
+(3, '2023-11-09 08:00:00', '2023-11-09 17:00:00'),
+(2, '2023-11-09 09:00:00', '2023-11-09 18:00:00'),
+(1, '2023-11-09 08:30:00', '2023-11-09 17:30:00');
+
+With cte as (
+select  employee_id, date(in_time) as date from attendance
+group by employee_id, date(in_time) )
+select distinct c.employee_id, c.date, a.out_time - a.in_time hours
+from cte c
+inner join 
+attendance a
+on c.employee_id = a.employee_id
+and date(a.in_time) = c.date
+---------
+/*
+Write a Query to Find Top N Highest-Grossing Products per
+Category
+*/
+CREATE TABLE sales (
+    product_id INT,
+    category_id INT,
+    revenue DECIMAL
+);
+
+INSERT INTO sales (product_id, category_id, revenue) VALUES
+(101, 1, 150.50),
+(102, 2, 200.75),
+(103, 1, 180.20),
+(104, 3, 220.90),
+(105, 2, 160.30),
+(106, 1, 250.00),
+(107, 3, 190.60),
+(108, 2, 210.85),
+(109, 1, 170.10),
+(110, 3, 230.45);
+
+with cte as(
+select product_id, category_id,
+sum(revenue), 
+dense_rank() over(partition by category_id order by sum(revenue) desc) rnk 
+from sales
+group by product_id, category_id
+)
+select * from cte where rnk<=1
+
+/*
+Write a query to Identify First and Last Transaction for Each
+Customer Within a Specific Time Range
+*/
+
+CREATE TABLE userstransactions (
+    customer_id INT,
+    transaction_date Timestamp,
+    amount DECIMAL
+);
+
+INSERT INTO userstransactions (customer_id, transaction_date, amount) VALUES
+(1, '2023-11-06 10:00:00', 50.25),
+(2, '2023-11-06 14:30:00', 120.50),
+(1, '2023-11-07 09:15:00', 75.00),
+(3, '2023-11-07 16:45:00', 200.00),
+(2, '2023-11-08 11:00:00', 90.75),
+(4, '2023-11-08 18:00:00', 300.20),
+(1, '2023-11-09 12:30:00', 60.10),
+(3, '2023-11-09 15:00:00', 150.80),
+(2, '2023-11-10 10:45:00', 110.35),
+(4, '2023-11-10 17:15:00', 250.90);
+
+select customer_id, min(transaction_date),
+max(transaction_date) from userstransactions
+where transaction_date::Date Between '2022-11-10' and '2025-11-06'
+group by customer_id
+
+;
