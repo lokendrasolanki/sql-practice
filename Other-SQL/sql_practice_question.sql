@@ -1285,6 +1285,46 @@ INSERT INTO userstransactions (customer_id, transaction_date, amount) VALUES
 select customer_id, min(transaction_date),
 max(transaction_date) from userstransactions
 where transaction_date::Date Between '2022-11-10' and '2025-11-06'
-group by customer_id
+group by customer_id;
+/*
+Write a query to return the account no and the transaction date when the account balance reached 1000.
+Please include only those accounts whose balance currently is >= 1000
+*/
+drop table account_balance;
+create table account_balance
+(
+    account_no          varchar(20),
+    transaction_date,    date,
+    debit_credit        varchar(10),
+    transaction_amount  decimal
+);
 
-;
+insert into account_balance values ('acc_1', to_date('2022-01-20', 'YYYY-MM-DD'), 'credit', 100);
+insert into account_balance values ('acc_1', to_date('2022-01-21', 'YYYY-MM-DD'), 'credit', 500);
+insert into account_balance values ('acc_1', to_date('2022-01-22', 'YYYY-MM-DD'), 'credit', 300);
+insert into account_balance values ('acc_1', to_date('2022-01-23', 'YYYY-MM-DD'), 'credit', 200);
+insert into account_balance values ('acc_2', to_date('2022-01-20', 'YYYY-MM-DD'), 'credit', 500);
+insert into account_balance values ('acc_2', to_date('2022-01-21', 'YYYY-MM-DD'), 'credit', 1100);
+insert into account_balance values ('acc_2', to_date('2022-01-22', 'YYYY-MM-DD'), 'debit', 1000);
+insert into account_balance values ('acc_3', to_date('2022-01-20', 'YYYY-MM-DD'), 'credit', 1000);
+insert into account_balance values ('acc_4', to_date('2022-01-20', 'YYYY-MM-DD'), 'credit', 1500);
+insert into account_balance values ('acc_4', to_date('2022-01-21', 'YYYY-MM-DD'), 'debit', 500);
+insert into account_balance values ('acc_5', to_date('2022-01-20', 'YYYY-MM-DD'), 'credit', 900);
+
+with cte as (
+select account_no, transaction_date,
+case when debit_credit='credit' 
+then transaction_amount 
+else transaction_amount*-1 end trns_amount from 
+account_balance
+), 
+final_result as (
+select *, sum(trns_amount) over(partition by account_no order by transaction_date
+range between unbounded preceding and unbounded following) final_balance,
+sum(trns_amount) over(partition by account_no order by transaction_date) current_balance,
+case when sum(trns_amount) over(partition by account_no order by transaction_date)>=1000 then 1 else 0 end flag
+from cte )
+select account_no, 
+min(transaction_date) 
+from final_result where flag=1 and final_balance>=1000
+group by account_no
