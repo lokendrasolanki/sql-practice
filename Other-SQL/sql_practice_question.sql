@@ -1322,7 +1322,7 @@ final_result as (
 select *, sum(trns_amount) over(partition by account_no order by transaction_date
 range between unbounded preceding and unbounded following) final_balance,
 sum(trns_amount) over(partition by account_no order by transaction_date) current_balance,
-case when sum(trns_amount) over(partition by account_no order by transaction_date)>=1000 then 1 else 0 end flag
+CASE WHEN SUM(trns_amount) over(partition by account_no order by transaction_date)>=1000 then 1 else 0 end flag
 from cte )
 select account_no, 
 min(transaction_date) 
