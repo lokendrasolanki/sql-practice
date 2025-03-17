@@ -1327,4 +1327,74 @@ from cte )
 select account_no, 
 min(transaction_date) 
 from final_result where flag=1 and final_balance>=1000
-group by account_no
+group by account_no;
+/*
+
+*/
+
+drop table if exists emp_input;
+create table emp_input
+(
+id      int,
+name    varchar(40)
+);
+insert into emp_input values (1, 'Emp1');
+insert into emp_input values (2, 'Emp2');
+insert into emp_input values (3, 'Emp3');
+insert into emp_input values (4, 'Emp4');
+insert into emp_input values (5, 'Emp5');
+insert into emp_input values (6, 'Emp6');
+insert into emp_input values (7, 'Emp7');
+insert into emp_input values (8, 'Emp8');
+
+with cte as(
+select *, ntile(4) over() buckets from emp_input)
+select STRING_AGG(id || ' ' || name,
+        ', '
+       order by id) from cte
+group by buckets;
+/*
+This table does not contain primary key.
+
+This table contains information about the activity performed by each user in a period of time.
+
+A person with username performed an activity from startDate to endDate.
+
+Write an SQL query to show the second most recent activity of each user.
+
+If the user only has one activity, return that one.
+
+A user can't perform more than one activity at the same time. Return the result table in any order.
+
+UserActivity table:
+
+If the user only has one activity, return that one.
+
+A user can't perform more than one activity at the same time. Return the result table in any order.
+*/
+
+
+-- CREATE TABLE statement
+CREATE TABLE UserActivity (
+    username VARCHAR(255),
+    activity VARCHAR(255),
+    startDate DATE,
+    endDate DATE
+);
+
+-- INSERT statements (example data)
+INSERT INTO UserActivity (username, activity, startDate, endDate) VALUES
+('Amy', 'Travel', '2020-02-12', '2020-02-20'),
+('Amy', 'Dancing', '2020-02-21', '2020-02-23'),
+('Amy', 'Travel', '2020-02-24', '2020-02-28'),
+('Joe', 'Travel', '2020-02-11', '2020-02-18');
+
+with cte as (
+select *, rank() over(partition by username order by startDate desc) rnk,
+count(username) over(partition by username 
+range between unbounded preceding  and current row) cnt
+from UserActivity)
+select *
+from cte where rnk=2 or cnt=1;
+
+
