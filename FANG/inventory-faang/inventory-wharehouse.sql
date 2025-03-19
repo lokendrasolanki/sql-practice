@@ -24,124 +24,106 @@ VALUES
 ('TR002', 242, 8, 'OutBound', '2019-05-22 00:50:00'),
 ('TR001', 250, 250, 'InBound', '2019-05-20 00:45:00');
 
-WITH
-	WH AS (
-		SELECT
-			*
-		FROM
-			INVENTORYTRANSACTIONS
-		ORDER BY
-			EVENT_DATETIME DESC
-	),
-	DAYS AS (
-		SELECT
-			ONHANDQUANTITY,
-			EVENT_DATETIME,
-			(EVENT_DATETIME - INTERVAL '90 days') AS DAY90,
-			(EVENT_DATETIME - INTERVAL '180 days') AS DAY180,
-			(EVENT_DATETIME - INTERVAL '270 days') AS DAY270,
-			(EVENT_DATETIME - INTERVAL '365 days') AS DAY365
-		FROM
-			WH
-		LIMIT
-			1
-	),
-	INV_90_DAYS AS (
-		SELECT
-			COALESCE(SUM(ONHANDQUANTITYDELTA), 0) AS DAYS_OLD_90
-		FROM
-			WH
-			CROSS JOIN DAYS D
-		WHERE
-			EVENT_TYPE = 'InBound'
-			AND WH.EVENT_DATETIME >= D.DAY90
-	),
-	FINAL_90DAYS AS (
-		SELECT
-			CASE
-				WHEN DAYS_OLD_90 < ONHANDQUANTITY THEN DAYS_OLD_90
-				ELSE ONHANDQUANTITY
-			END DAYS_OLD_90
-		FROM
-			INV_90_DAYS
-			CROSS JOIN DAYS
-	),
-	INV_180_DAYS AS (
-		SELECT
-			COALESCE(SUM(ONHANDQUANTITYDELTA), 0) AS DAYS_OLD_180
-		FROM
-			WH
-			CROSS JOIN DAYS D
-		WHERE
-			EVENT_TYPE = 'InBound'
-			AND WH.EVENT_DATETIME BETWEEN D.DAY180 AND D.DAY90
-	),
-	FINAL_180DAYS AS (
-		SELECT
-			CASE
-				WHEN DAYS_OLD_180 < (ONHANDQUANTITY - DAYS_OLD_90) THEN DAYS_OLD_180
-				ELSE ONHANDQUANTITY - DAYS_OLD_90
-			END DAYS_OLD_180
-		FROM
-			INV_180_DAYS
-			CROSS JOIN DAYS
-			CROSS JOIN FINAL_90DAYS
-	),
-	INV_270_DAYS AS (
-		SELECT
-			COALESCE(SUM(ONHANDQUANTITYDELTA), 0) AS DAYS_OLD_270
-		FROM
-			WH
-			CROSS JOIN DAYS D
-		WHERE
-			EVENT_TYPE = 'InBound'
-			AND WH.EVENT_DATETIME BETWEEN D.DAY270 AND D.DAY180
-	),
-	FINAL_270DAYS AS (
-		SELECT
-			CASE
-				WHEN DAYS_OLD_270 < (ONHANDQUANTITY - DAYS_OLD_90) THEN DAYS_OLD_270
-				ELSE ONHANDQUANTITY - DAYS_OLD_90 - DAYS_OLD_180
-			END DAYS_OLD_270
-		FROM
-			INV_270_DAYS
-			CROSS JOIN DAYS
-			CROSS JOIN FINAL_90DAYS
-			CROSS JOIN FINAL_180DAYS
-	),
-	INV_365_DAYS AS (
-		SELECT
-			COALESCE(SUM(ONHANDQUANTITYDELTA), 0) AS DAYS_OLD_365
-		FROM
-			WH
-			CROSS JOIN DAYS D
-		WHERE
-			EVENT_TYPE = 'InBound'
-			AND WH.EVENT_DATETIME BETWEEN D.DAY365 AND D.DAY270
-	),
-	FINAL_365DAYS AS (
-		SELECT
-			CASE
-				WHEN DAYS_OLD_365 < (ONHANDQUANTITY - DAYS_OLD_90 - DAYS_OLD_270) THEN DAYS_OLD_365
-				ELSE ONHANDQUANTITY - DAYS_OLD_90 - DAYS_OLD_180 - DAYS_OLD_270
-			END DAYS_OLD_365
-		FROM
-			INV_365_DAYS
-			CROSS JOIN DAYS
-			CROSS JOIN FINAL_90DAYS
-			CROSS JOIN FINAL_180DAYS
-			CROSS JOIN FINAL_270DAYS
-	)
-SELECT
-	DAYS_OLD_90 AS "0-90 days old",
-	DAYS_OLD_180 AS "91-180 days old",
-	DAYS_OLD_270 AS "181-270 days old",
-	DAYS_OLD_365 AS "271-365 days old"
-FROM
-	FINAL_90DAYS
-	CROSS JOIN FINAL_180DAYS
-	CROSS JOIN FINAL_270DAYS
-	CROSS JOIN FINAL_365DAYS
+with WH as (
+select * from InventoryTransactions order by event_datetime desc
+),
+days as (
+select OnHandQuantity, event_datetime,
+(event_datetime -  INTERVAL '90 days') as day90,
+(event_datetime -  INTERVAL '180 days') as day180,
+(event_datetime -  INTERVAL '270 days') as day270,
+(event_datetime -  INTERVAL '365 days') as day365
+from wh limit 1
+),
+inv_90_days as (
+select COALESCE(sum(OnHandQuantityDelta), 0) as days_old_90
+ from wh 
+ cross join days d
+ where
+ event_type = 'InBound'
+ and wh.event_datetime>=d.day90
+),
+final_90days as (
+select case when days_old_90 < OnHandQuantity then days_old_90 
+else OnHandQuantity end  days_old_90
+from inv_90_days 
+cross join 
+days
+),
+inv_180_days as (
+select COALESCE(sum(OnHandQuantityDelta), 0) as days_old_180
+ from wh 
+ cross join days d
+ where
+ event_type = 'InBound'
+ and wh.event_datetime between d.day180 and d.day90
+),
+final_180days as (
+select case when days_old_180 < (OnHandQuantity - days_old_90) then days_old_180 
+else OnHandQuantity - days_old_90 end  days_old_180
+from inv_180_days 
+cross join 
+days
+CROSS JOIN 
+final_90days
+),
+
+inv_270_days as (
+select COALESCE(sum(OnHandQuantityDelta), 0) as days_old_270
+ from wh 
+ cross join days d
+ where
+ event_type = 'InBound'
+ and wh.event_datetime between d.day270 and d.day180
+),
+final_270days as (
+select case when days_old_270 < (OnHandQuantity - days_old_90) then days_old_270 
+else OnHandQuantity - days_old_90 - days_old_180 end  days_old_270
+from inv_270_days 
+cross join 
+days
+CROSS JOIN 
+final_90days
+CROSS JOIN 
+final_180days
+),
+inv_365_days as (
+select COALESCE(sum(OnHandQuantityDelta), 0) as days_old_365
+ from wh 
+ cross join days d
+ where
+ event_type = 'InBound'
+ and wh.event_datetime between d.day365 and d.day270
+),
+final_365days as (
+select case when days_old_365 < (OnHandQuantity - days_old_90 - days_old_270) then days_old_365 
+else OnHandQuantity - days_old_90 - days_old_180 - days_old_270 end  days_old_365
+from inv_365_days 
+cross join 
+days
+CROSS JOIN 
+final_90days
+CROSS JOIN 
+final_180days
+CROSS JOIN 
+final_270days
+)
+
+select days_old_90 as "0-90 days old",
+days_old_180 as "91-180 days old",
+days_old_270 as "181-270 days old",
+days_old_365 as "271-365 days old"
+from final_90days
+CROSS JOIN
+final_180days
+Cross join 
+final_270days
+Cross join 
+final_365days
+
+
+
+
 
 
 
