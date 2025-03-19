@@ -67,7 +67,6 @@ days
 CROSS JOIN 
 final_90days
 ),
-
 inv_270_days as (
 select COALESCE(sum(OnHandQuantityDelta), 0) as days_old_270
  from wh 
@@ -108,7 +107,6 @@ final_180days
 CROSS JOIN 
 final_270days
 )
-
 select days_old_90 as "0-90 days old",
 days_old_180 as "91-180 days old",
 days_old_270 as "181-270 days old",
