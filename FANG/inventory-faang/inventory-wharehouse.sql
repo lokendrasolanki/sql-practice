@@ -97,31 +97,23 @@ select COALESCE(sum(OnHandQuantityDelta), 0) as days_old_365
 final_365days as (
 select case when days_old_365 < (OnHandQuantity - days_old_90 - days_old_270) then days_old_365 
 else OnHandQuantity - days_old_90 - days_old_180 - days_old_270 end  days_old_365
-from inv_365_days 
-cross join 
-days
-CROSS JOIN 
-final_90days
-CROSS JOIN 
-final_180days
-CROSS JOIN 
-final_270days
+FROM
+	INV_365_DAYS
+	CROSS JOIN DAYS
+	CROSS JOIN FINAL_90DAYS
+	CROSS JOIN FINAL_180DAYS
+	CROSS JOIN FINAL_270DAYS
 )
-select days_old_90 as "0-90 days old",
-days_old_180 as "91-180 days old",
-days_old_270 as "181-270 days old",
-days_old_365 as "271-365 days old"
-from final_90days
-CROSS JOIN
-final_180days
-Cross join 
-final_270days
-Cross join 
-final_365days;
-
-
-
-
+SELECT
+	DAYS_OLD_90 AS "0-90 days old",
+	DAYS_OLD_180 AS "91-180 days old",
+	DAYS_OLD_270 AS "181-270 days old",
+	DAYS_OLD_365 AS "271-365 days old"
+FROM
+	FINAL_90DAYS
+	CROSS JOIN FINAL_180DAYS
+	CROSS JOIN FINAL_270DAYS
+	CROSS JOIN FINAL_365DAYS;
 
 
 

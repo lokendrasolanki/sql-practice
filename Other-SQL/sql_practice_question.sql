@@ -1430,5 +1430,108 @@ insert into car_travels values ('Car3', 'Day4', 100);
 select *, 
 cumulative_distance - lag(cumulative_distance, 1, 0 ) over(partition by cars order by days) actual_travel from car_travels;
 
+/*
+Given a Teams table with columns TeamID (integer) and Members (comma-separated string of names), write a query to calculate and display the total number of members in each team
+*/
 
+
+Drop table if exists Teams;
+CREATE TABLE Teams (
+    TeamID INT PRIMARY KEY,
+    Members TEXT
+);
+
+-- Insert Data
+INSERT INTO Teams (TeamID, Members) VALUES
+(1, 'Chris, Evan, Marty, Eva'),
+(2, 'Jake, Olivia'),
+(3, 'Sophia, Liam, Noah, Emma'),
+(4, 'Ava, Lucas, Mia, Ethan, Amelia'),
+(5, 'Benjamin, Charlotte'),
+(6, 'Harper, Henry, Evelyn, Daniel, Ella'),
+(7, 'Michael, Emily, Alexander'),
+(8, 'James, Abigail, William, Isabella, Jack, Grace'),
+(9, 'Sebastian, Chloe'),
+(10, 'David, Lily, Samuel, Madison');
+
+select *, array_length(string_to_array(Members , ','),1) no_of_members from Teams;
+
+/*
+interchange the id of every product based pn category
+*/
+DROP TABLE IF EXISTS Products;
+CREATE TABLE Products (
+    ProductID INT PRIMARY KEY,
+    Product VARCHAR(255),
+    Category VARCHAR(100)
+);
+
+INSERT INTO Products (ProductID, Product, Category)
+VALUES
+    (1, 'Laptop', 'Electronics'),
+    (2, 'Smartphone', 'Electronics'),
+    (3, 'Tablet', 'Electronics'),
+    (9, 'Printer', 'Electronics'),
+    (4, 'Headphones', 'Accessories'),
+    (5, 'Smartwatch', 'Accessories'),
+    (6, 'Keyboard', 'Accessories'),
+    (7, 'Mouse', 'Accessories'),
+    (8, 'Monitor', 'Accessories');
+
+with cte as(
+select *,
+row_number() over(partition by category order by ProductID) rn1,
+row_number() over(partition by category order by ProductID desc) rn2
+from products)
+select c2.productid, c1.product, c1.category from cte c1
+join cte c2
+on c1.category = c2.category
+and c1.rn1 = c2.rn2;
+
+/*
+Product recommendation. Just the basic type (“customers who bought this also bought…”). That, in its simplest form, is an outcome of basket analysis.
+*/
+
+create table orders
+(
+order_id int,
+customer_id int,
+product_id int
+);
+
+insert into orders VALUES 
+(1, 1, 1),
+(1, 1, 2),
+(1, 1, 3),
+(2, 2, 1),
+(2, 2, 2),
+(2, 2, 4),
+(3, 1, 5);
+
+drop table if exists products;
+create table products (
+id int,
+name varchar(10)
+);
+insert into products VALUES 
+(1, 'A'),
+(2, 'B'),
+(3, 'C'),
+(4, 'D'),
+(5, 'E');
+
+with order_cte as (
+select  o.order_id, o.customer_id, p.name as product_name from orders o inner join products p
+on o.product_id = p.id
+),
+product_cte as (
+select o1.order_id,  CONCAT(o1.product_name,o2.product_name ) as product_name from order_cte o1 
+inner join 
+order_cte o2
+on o1.order_id = o2.order_id
+where o1.product_name !=  o2.product_name and o1.product_name <  o2.product_name)
+select product_name ,
+count(1) as total from product_cte 
+group by product_name 
+order by product_name;
 
