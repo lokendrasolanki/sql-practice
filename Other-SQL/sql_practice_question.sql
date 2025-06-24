@@ -1535,3 +1535,636 @@ count(1) as total from product_cte
 group by product_name 
 order by product_name;
 
+--find companies who have atleast 2 users who speaks English and German both the languages
+create table company_users 
+(
+company_id int,
+user_id int,
+language varchar(20)
+);
+
+insert into company_users values 
+ (1,1,'English')
+,(1,1,'German')
+,(1,2,'English')
+,(1,3,'German')
+,(1,3,'English')
+,(1,4,'English')
+,(2,5,'English')
+,(2,5,'German')
+,(2,5,'Spanish')
+,(2,6,'German')
+,(2,6,'Spanish')
+,(2,7,'English');
+
+with cte as (
+select  user_id, company_id from company_users
+where language in ('English', 'German')
+group by company_id, user_id 
+having count(*)>1)
+
+select company_id, count(*) from cte
+group by company_id 
+having count(*)>1;
+
+/*
+-write a query to print total rides and profit rides for each driver
+--profit ride is when the end location of current ride is same as start location on next ride
+*/
+
+
+CREATE TABLE DRIVERS (
+	ID VARCHAR(10),
+	START_TIME TIME,
+	END_TIME TIME,
+	START_LOC VARCHAR(10),
+	END_LOC VARCHAR(10)
+);
+
+INSERT INTO	DRIVERS VALUES	('dri_1', '09:00', '09:30', 'a', 'b'),	('dri_1', '09:30', '10:30', 'b', 'c'),	('dri_1', '11:00', '11:30', 'd', 'e');
+
+INSERT INTO	DRIVERS VALUES	('dri_1', '12:00', '12:30', 'f', 'g'),	('dri_1', '13:30', '14:30', 'c', 'h');
+
+INSERT INTO	DRIVERS VALUES('dri_2', '12:15', '12:30', 'f', 'g'),('dri_2', '13:30', '14:30', 'c', 'h');
+
+with cte as (
+select d1.id, count(*)-1 cnt from drivers d1
+inner join 
+drivers d2
+on d1.id = d2.id
+where d1.start_loc = d2.end_loc
+group by d1.id
+)
+, cte2 as(
+select id, count(*) total_ride from drivers 
+group by id
+)
+select c1.id, c1.total_ride, coalesce(c.cnt, 0) from cte2 c1  left join cte c
+  on c.id = c1.id;
+
+
+with cte as (
+select *, case when 
+end_loc = lead(start_loc, 1) over(partition by id order by start_time) 
+then 1
+else null end
+next_start_loc
+from drivers )
+select id, count(*) totl_ride, 
+count(next_start_loc) profit_ride
+ from cte
+ group by id;
+
+/*
+-Write a sql query to find users who purchased different products on different dates
+--ie: products purchased on any given day are not repeated on any other day
+*/
+ 
+CREATE TABLE purchase_history
+(
+    userid INT,
+    productid INT,
+    purchasedate DATE
+);
+
+INSERT INTO purchase_history (userid, productid, purchasedate) VALUES
+(1, 1, '2012-01-23'),
+(1, 2, '2012-01-23'),
+(1, 3, '2012-01-25'),
+(2, 1, '2012-01-23'),
+(2, 2, '2012-01-23'),
+(2, 2, '2012-01-25'),
+(2, 4, '2012-01-25'),
+(3, 4, '2012-01-23'),
+(3, 1, '2012-01-23'),
+(4, 1, '2012-01-23'),
+(4, 2, '2012-01-25');
+
+with cte as (
+select userid, count(distinct purchasedate ) as uniq
+, count(productid) total_product,
+count(distinct productid) dist_product
+from
+purchase_history
+group by userid
+)
+select * from cte
+where total_product = dist_product and uniq>1;
+
+----
+/*
+https://platform.stratascratch.com/coding/10547-actor-rating-difference-analysis?code_type=1
+*/
+
+CREATE TABLE ActorFilms (
+    actor_name TEXT,
+    film_title TEXT,
+    release_date DATE,
+    film_rating float4
+);
+
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Matt Damon', 'Equal Depths', '2018-09-21', 8);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Matt Damon', 'Equal Heights', '2015-06-15', 8);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Emma Stone', 'Quantum Fate', '2003-08-31', 8.1);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Leonardo Dicaprio', 'Rebel Rising', '2001-06-26', 9.2);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Alex Taylor', 'Shadow Realm', '2002-02-06', 8.2);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Emma Stone', 'Eternal Bond', '2008-07-05', 6.5);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Scarlett Johansson', 'Infinite Skies', '2010-04-21', 8.7);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Scarlett Johansson', 'Silent Storm', '2005-12-06', 7.4);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Jane Smith', 'Burning Hearts', '2003-02-17', 5.5);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Leonardo Dicaprio', 'Eternal Bond', '2020-06-24', 6.4);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Natalie Portman', 'Silent Storm', '2003-03-16', 8.4);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Alex Taylor', 'Bright Lights', '2000-09-17', 7.7);
+INSERT INTO ActorFilms (actor_name, film_title, release_date, film_rating) VALUES ('Emma Stone', 'A Long Journey', '2016-05-09', 6.2);
+
+with most_recent_rating as(
+select *, row_number() over(partition by actor_name order by release_date desc ) rn from actorfilms 
+)
+select actor_name,
+sum(case when rn=1 then film_rating else 0.0 end) latest_rating,
+avg(case when rn>1 then film_rating else 0.0 end) avg_rating,
+sum(case when rn=1 then film_rating else 0.0 end)-
+avg(case when rn>1 then film_rating else 0.0 end) final_rating
+from most_recent_rating
+group by actor_name;
+
+/*
+. Write a SQL query to find the employee names who have the same salary 
+as another employee in the same department
+*/
+
+create table emp_info(id int, name varchar(10),dept varchar(10),salary int);
+
+insert into emp_info values(1,'Akash','Sales',100);
+insert into emp_info values(2,'John','Sales',110);
+insert into emp_info values(3,'Rohit','Sales',100);
+insert into emp_info values(4,'Tom','IT',200);
+insert into emp_info values(5,'Subham','IT',205);
+insert into emp_info values(6,'Vabna','IT',200);
+insert into emp_info values(7,'Prativa','Marketing',150);
+insert into emp_info values(8,'Rahul','Marketing',155);
+insert into emp_info values(9,'yash','Marketing',160);
+
+--Approach 1
+select  e1.name from emp_info e1 cross join  emp_info e2
+where  e1.dept = e2.dept and e1.salary = e2.salary and e1.name != e2.name;
+
+-- Approach - 2 
+
+with cte as (
+select * , count(*) over(partition by dept, salary order by salary ) as cnt from emp_info
+)
+select name, dept, salary from cte where cnt =2;
+
+/*
+Write a SQL query to return all orders where the invoice status is not 'Paid'.
+*/
+
+CREATE TABLE userorders (
+ order_id INT,
+ customer_name VARCHAR(50)
+);
+
+INSERT INTO userorders VALUES
+(1, 'Alice'),
+(2, 'Bob'),
+(3, 'Charlie'),
+(4, 'David'),
+(5, 'Emma');
+
+CREATE TABLE userinvoices (
+ invoice_id INT,
+ order_id INT,
+ status VARCHAR(20)
+);
+
+INSERT INTO userinvoices VALUES
+(101, 1, 'Paid'),
+(102, 2, 'Pending'),
+(103, 4, 'Paid');
+
+select * from userorders uo LEFT JOIN userinvoices ui
+on uo.order_id = ui.order_id
+Where ui.status <> 'Paid' or ui.status is null;
+
+
+/*
+*/
+
+CREATE TABLE orderss (
+    customer_id INT,
+    order_id INT,
+    order_date DATE,
+    total_amount NUMERIC(10, 2)
+);
+
+INSERT INTO orderss (customer_id, order_id, order_date, total_amount) VALUES
+(101, 1001, '2025-01-15', 500.00),
+(102, 1002, '2025-01-14', 300.00),
+(101, 1001, '2025-01-17', 550.00),
+(103, 1003, '2025-01-16', 450.00),
+(102, 1002, '2025-01-18', 320.00),
+(103, 1003, '2025-01-19', 460.00);
+
+with cte as(
+select 
+	*,
+	ROW_NUMBER() OVER(partition by customer_id, order_id order by order_date desc) rn 
+from 
+	orderss
+)
+select customer_id, order_id, order_date, total_amount from cte where rn=1;
+
+
+/*
+You're working for a large financial institution that provides various types of loans to customers. Your task is to analyze loan repayment data to assess credit risk and improve risk management strategies.
+
+Write an SQL to create 2 flags for each loan as per below rules. Display loan id, loan amount , due date and the 2 flags.
+1- fully_paid_flag: 1 if the loan was fully repaid irrespective of payment date else it should be 0.
+2- on_time_flag : 1 if the loan was fully repaid on or before due date else 0
+*/
+
+-- loans Table Creation
+CREATE TABLE loans (
+    loan_id INT PRIMARY KEY,
+    customer_id INT,
+    loan_amount INT,
+    due_date DATE
+);
+
+-- loans Table Data Insertion
+INSERT INTO loans (loan_id, customer_id, loan_amount, due_date) VALUES
+(1, 1, 5000, '2023-01-15'),
+(2, 2, 8000, '2023-02-20'),
+(3, 3, 10000, '2023-03-10'),
+(4, 4, 6000, '2023-04-05'),
+(5, 5, 7000, '2023-05-01');
+
+-- payments Table Creation
+CREATE TABLE payments (
+    payment_id INT PRIMARY KEY,
+    loan_id INT REFERENCES loans(loan_id), -- Foreign key referencing loans table
+    payment_date DATE,
+    amount_paid INT
+);
+
+-- payments Table Data Insertion
+INSERT INTO payments (payment_id, loan_id, payment_date, amount_paid) VALUES
+(1, 1, '2023-01-10', 2000),
+(2, 1, '2023-02-10', 1500),
+(3, 2, '2023-02-20', 8000),
+(4, 3, '2023-04-20', 5000),
+(5, 4, '2023-03-15', 2000),
+(6, 4, '2023-04-02', 4000),
+(7, 5, '2023-04-02', 4000),
+(8, 5, '2023-05-02', 3000);
+
+with cte as (
+select loan_id, max(payment_date) final_pay_date, sum(amount_paid) tolat_paid_amount 
+from payments
+group by loan_id
+ )
+ select l.loan_id, l.loan_amount, l.due_date,
+ CASE WHEN
+   loan_amount = tolat_paid_amount then 1 else 0 end fully_paid_flag,
+ CASE WHEN
+    c.final_pay_date<= due_date and loan_amount = tolat_paid_amount then 1 else 0 end on_time_flag
+ from cte c join loans l
+ on c.loan_id = l.loan_id;
+
+
+
+ /*
+ Problem Statement: Find customers with successful multiple purchases in the last 1 month. Purchase is considered successful if they are not returned within 1 week of purchase. 
+
+ */
+
+ 
+DROP TABLE IF EXISTS purchases;
+CREATE TABLE purchases 
+(
+    purchase_id 	INT,
+    customer_id 	INT,
+    purchase_date 	DATE,
+    return_date		DATE
+);
+INSERT INTO purchases VALUES
+(1, 101, '2025-04-30', '2025-05-01'),
+(2, 102, '2025-04-29', '2025-04-29'),
+(3, 101, '2025-04-30', NULL),
+(4, 101, '2025-04-05', NULL),
+(5, 103, '2025-04-17', NULL),
+(6, 102, '2025-04-29', NULL),
+(7, 102, '2025-05-09', NULL),
+(8, 103, '2025-05-01', '2025-05-10');
+
+select customer_id, count(customer_id) 
+from purchases
+where purchase_date> cast(current_date  - interval '55 days'as date)
+and (return_date>= cast(purchase_date + interval '7 days' as date) or return_date is null)
+group by customer_id
+having count(customer_id)>1;
+
+/*
+
+*/
+
+
+DROP TABLE IF EXISTS cust;
+
+CREATE TABLE cust
+(
+    id     INT,
+    name   VARCHAR(50)
+);
+INSERT INTO cust VALUES
+(101, 'David'),
+(102, 'Robin'),
+(103, 'Carol'),
+(104, 'Ali');
+
+DROP TABLE IF EXISTS ord;
+CREATE TABLE ord 
+(
+    id              INT,
+    customer_id     INT,
+    total_cost      DECIMAL,
+    order_date      DATE
+);
+INSERT INTO ord VALUES
+(1, 101, 100, '2025-04-15'),
+(2, 102, 40, '2025-04-20'),
+(3, 101, 80, '2025-03-12'),
+(4, 101, 120, '2025-03-12'),
+(5, 103, 60, '2025-04-20'),
+(6, 103, 50, '2025-04-20');
+
+-- SELECT * FROM cust;
+with cte as (
+SELECT *, dense_rank() over(partition by customer_id order by order_date desc) rnk FROM ord
+),  order_cte as (
+select  customer_id, sum(total_cost) as TOTAL_VALUE, order_date as  LAST_ORDER_DATE from cte where rnk=1
+group by customer_id, order_date)
+select c.name as CUSTOMER, 
+case when o.TOTAL_VALUE is null then 0 else TOTAL_VALUE end,
+case when o.LAST_ORDER_DATE is null then '9999-01-01' else LAST_ORDER_DATE end
+from cust c left join order_cte o
+on c.id = o.customer_id;
+
+/*
+Problem Statement: Find customers who have not placed any orders yet in 2025 but had placed orders in every month of 2024 and had placed orders in at least 6 of the months in 2023. Display the customer name.
+*/
+
+
+DROP TABLE IF EXISTS customers;
+CREATE TABLE customers 
+(
+    id     INT PRIMARY KEY,
+    name   VARCHAR(50)
+);
+INSERT INTO customers VALUES
+(101, 'David Smith'),
+(102, 'Nikhil Reddy'),
+(103, 'Carol Tan'),
+(104, 'Riya Sengupta'),
+(105, 'Liam Patel'),
+(106, 'Priya Nair'),
+(107, 'James Canny');
+
+
+DROP TABLE IF EXISTS orders;
+CREATE TABLE orders 
+(
+    id              INT PRIMARY KEY,
+    customer_id     INT,
+    order_date      DATE
+);
+INSERT INTO orders VALUES
+(1 , 101, '2024-01-05'),
+(2 , 101, '2024-02-10'),
+(3 , 101, '2024-03-03'),
+(4 , 101, '2024-04-15'),
+(5 , 101, '2024-05-20'),
+(6 , 101, '2024-06-18'),
+(7 , 101, '2024-07-12'),
+(8 , 101, '2024-08-25'),
+(9 , 101, '2024-09-30'),
+(10, 101, '2024-10-22'),
+(11, 101, '2024-11-02'),
+(12, 101, '2024-12-17'),
+(13, 102, '2024-01-10'),
+(14, 102, '2024-02-15'),
+(15, 102, '2024-03-10'),
+(16, 102, '2024-04-05'),
+(17, 102, '2024-05-07'),
+(18, 102, '2024-06-12'),
+(19, 102, '2024-07-14'),
+(20, 102, '2024-08-16'),
+(21, 103, '2024-01-01'),
+(22, 103, '2024-04-01'),
+(23, 103, '2024-07-01'),
+(24, 103, '2024-10-01'),
+(25, 104, '2024-02-20'),
+(26, 104, '2024-05-20'),
+(27, 104, '2024-08-20'),
+(28, 105, '2024-01-01'),
+(29, 105, '2024-02-01'),
+(30, 105, '2024-03-01'),
+(31, 105, '2024-04-01'),
+(32, 105, '2024-05-01'),
+(33, 105, '2024-06-01'),
+(34, 105, '2024-07-01'),
+(35, 105, '2024-08-01'),
+(36, 105, '2024-09-01'),
+(37, 105, '2024-10-01'),
+(38, 105, '2024-11-01'),
+(39, 105, '2024-12-01'),
+(40, 102, '2024-08-10'),
+(41, 102, '2024-07-05'),
+(42, 102, '2024-06-06'),
+(43, 102, '2024-05-26'),
+(44, 106, '2024-01-02'),
+(45, 106, '2024-02-13'),
+(46, 106, '2024-03-05'),
+(47, 106, '2024-04-16'),
+(48, 106, '2024-05-26'),
+(49, 106, '2024-06-17'),
+(50, 106, '2024-07-19'),
+(51, 106, '2024-08-20'),
+(52, 106, '2024-09-12'),
+(53, 106, '2024-10-22'),
+(54, 106, '2024-11-03'),
+(55, 106, '2024-12-14'),
+(56, 105, '2025-01-28'),
+(57, 105, '2025-04-21'),
+(58, 103, '2025-03-22'),
+(59, 101, '2023-01-15'),
+(60, 101, '2023-02-11'),
+(61, 101, '2023-03-13'),
+(62, 101, '2023-05-10'),
+(63, 101, '2023-06-12'),
+(64, 101, '2023-07-11'),
+(65, 101, '2023-12-12'),
+(66, 107, '2024-01-22'),
+(67, 107, '2024-02-28'),
+(68, 107, '2024-03-31'),
+(69, 107, '2024-04-30'),
+(70, 107, '2024-05-30'),
+(71, 107, '2024-06-30'),
+(72, 107, '2024-07-31'),
+(73, 107, '2024-08-31'),
+(74, 107, '2024-09-30'),
+(75, 107, '2024-10-31'),
+(76, 107, '2024-11-30'),
+(77, 107, '2024-12-28'),
+(78, 107, '2024-12-31'),
+(79, 107, '2023-07-31'),
+(80, 107, '2023-08-31'),
+(81, 107, '2023-09-30'),
+(82, 107, '2023-10-31'),
+(83, 107, '2023-11-30'),
+(84, 107, '2023-12-31'),
+(85, 105, '2023-01-21'),
+(86, 105, '2023-03-09'),
+(87, 105, '2023-04-20'),
+(88, 105, '2023-06-10'),
+(89, 105, '2023-10-10'),
+(90, 105, '2023-11-21');
+
+-- step 1 get user which only place order in 2024
+with cte as (
+select *, to_char( order_date, 'YYYY-MM') as year_ from orders
+where EXTRACT('year' from order_date)<2025)
+select name from  customers where id in (
+select customer_id
+from cte  
+group by customer_id
+having count(distinct year_)>=18);
+
+--finding match combinations 
+CREATE TABLE cric_teams (
+    team_name VARCHAR(50) NOT NULL
+);
+
+-- Insert team names
+INSERT INTO cric_teams (team_name) VALUES 
+('CSK'),
+('KKR'),
+('GT'),
+('DC'),
+('LSG');
+
+select concat(c2.team_name,' vs ', c1.team_name ) from cric_teams c1 cross join  
+cric_teams c2
+where c1.team_name < c2.team_name;
+
+
+
+CREATE TABLE input_table_1 (
+    Market VARCHAR(50),
+    Sales INT
+);
+
+INSERT INTO input_table_1 (Market, Sales) VALUES
+('India', 100),
+('Maharashtra', 20),
+('Telangana', 18),
+('Karnataka', 22),
+('Gujarat', 25),
+('Delhi', 12),
+('Nagpur', 8),
+('Mumbai', 10),
+('Agra', 5),
+('Hyderabad', 9),
+('Bengaluru', 12),
+('Hubli', 12),
+('Bhopal', 5);
+
+CREATE TABLE input_table_2 (
+    Country VARCHAR(50),
+    State VARCHAR(50),
+    City VARCHAR(50)
+);
+delete from input_table_2;
+INSERT INTO input_table_2 (Country, State, City) VALUES
+('India', 'Maharashtra', 'Nagpur'),
+('India', 'Maharashtra', 'Mumbai'),
+('India', 'Maharashtra', 'Akola'),
+('India', 'Telangana', 'Hyderabad'),
+('India', 'Karnataka', 'Bengaluru'),
+('India', 'Karnataka', 'Hubli'),
+('India', 'Gujarat', 'Ahmedabad'),
+('India', 'Gujarat', 'Vadodara'),
+('India', 'UP', 'Agra'),
+('India', 'UP', 'Mirzapur'),
+('India', 'Delhi', NULL), 
+('India', 'Orissa', NULL); 
+
+
+/*
+
+*/
+
+DROP TABLE IF EXISTS teams;
+CREATE TABLE teams 
+(
+       team_id       INT PRIMARY KEY,
+       team_name     VARCHAR(50) NOT NULL
+);
+
+
+DROP TABLE IF EXISTS matches;
+CREATE TABLE matches 
+(
+       match_id 	INT PRIMARY KEY,
+       host_team 	INT,
+       guest_team 	INT,
+       host_goals 	INT,
+       guest_goals 	INT
+);
+
+INSERT INTO teams VALUES(10, 'Give');
+INSERT INTO teams VALUES(20, 'Never');
+INSERT INTO teams VALUES(30, 'You');
+INSERT INTO teams VALUES(40, 'Up');
+INSERT INTO teams VALUES(50, 'Gonna');
+
+INSERT INTO matches VALUES(1, 30, 20, 1, 0);
+INSERT INTO matches VALUES(2, 10, 20, 1, 2);
+INSERT INTO matches VALUES(3, 20, 50, 2, 2);
+INSERT INTO matches VALUES(4, 10, 30, 1, 0);
+INSERT INTO matches VALUES(5, 30, 50, 0, 1);
+
+with cte as(
+SELECT *,
+CASE WHEN guest_goals > host_goals THEN 3
+     WHEN guest_goals < host_goals THEN 0
+	 ELSE 1 END as guest_point,
+CASE WHEN guest_goals < host_goals Then 3
+     WHEN guest_goals > host_goals THEN 0
+	 ELSE 1 END as host_point
+FROM matches)
+, host as(
+select host_team, sum(host_point) total_host_points 
+from cte 
+group by host_team
+),
+guest as(
+select guest_team, sum(guest_point) total_guest_points 
+from cte 
+group by guest_team
+)
+select coalesce(host_team, guest_team, t.team_id) team, t.team_name, 
+coalesce(total_host_points, 0) + coalesce(total_guest_points, 0) points
+from host h 
+ full join 
+ guest g 
+ on h.host_team = g.guest_team
+ right join teams t
+ on t.team_id = coalesce(host_team, guest_team)
+ order by points desc , team;
+
+
+
+
+
