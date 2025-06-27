@@ -127,6 +127,47 @@ select e.* from emp_details e join cte c
 )
 select * from cte;
 
+/*
+
+*/
+
+CREATE TABLE notifications (
+    notification_id INTEGER PRIMARY KEY,
+    product_id VARCHAR(50),
+    delivered_at TIMESTAMP
+);
+
+INSERT INTO notifications (notification_id, product_id, delivered_at) VALUES
+(1, 'p1', '2024-01-01 08:00:00'),
+(2, 'p2', '2024-01-01 10:30:00'),
+(3, 'p3', '2024-01-01 11:30:00');
+
+CREATE TABLE purchases (
+    user_id INT,
+    product_id VARCHAR(50),
+    purchase_timestamp TIMESTAMP
+);
+INSERT INTO purchases (user_id, product_id, purchase_timestamp) VALUES
+(1, 'p1', '2024-01-01 09:00:00'),
+(2, 'p2', '2024-01-01 09:00:00'),
+(3, 'p2', '2024-01-01 09:30:00'),
+(3, 'p1', '2024-01-01 10:20:00'),
+(4, 'p2', '2024-01-01 10:40:00'),
+(1, 'p2', '2024-01-01 10:50:00'),
+(5, 'p2', '2024-01-01 11:45:00'),
+(2, 'p3', '2024-01-01 11:45:00'),
+(2, 'p3', '2024-01-01 12:30:00'),
+(3, 'p3', '2024-01-01 14:30:00');
+
+With cte as (
+select *, LEAST(delivered_at + INTERVAL '2 hours', lead(delivered_at) OVER( order by  delivered_at)) as effective_notification_time from notifications)
+select c.notification_id, 
+count(CASE WHEN c.product_id = p.product_id THEN 1 END) same_product_purchases,
+count(CASE WHEN c.product_id != p.product_id THEN 1 END) different_product_purchases
+from cte c join purchases p
+on p.purchase_timestamp BETWEEN  c.delivered_at and  c.effective_notification_time
+group by c.notification_id
+ORDER By c.notification_id;
 
 
 
