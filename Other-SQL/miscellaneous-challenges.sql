@@ -253,3 +253,85 @@ LEFT JOIN cumulative_promotions cp ON e.id = cp.emp_id
 ORDER BY e.id;
 
 
+
+CREATE TABLE t1 (
+    emp_id INT
+);
+
+-- Insert Data Script
+INSERT INTO t1 (emp_id) VALUES
+(1),
+(1),
+(1),
+(2),
+(null),
+(null);
+
+
+CREATE TABLE t2 (
+    emp_id INT
+);
+
+-- Insert Data Script
+INSERT INTO t2 (emp_id) VALUES
+(1),
+(1),
+(0),
+(null);
+
+
+select * from t1 inner join t2 -- 6 record 3*2
+on t1.emp_id = t2.emp_id;
+
+select * from t1 Left join t2 -- 9 matching -6 + nonmatchin 3
+on t1.emp_id = t2.emp_id;
+
+select * from t1 left outer join t2 -- 
+on t1.emp_id = t2.emp_id;
+
+select * from t1 Right join t2 --8
+on t1.emp_id = t2.emp_id;
+
+select * from t1 Right outer join t2
+on t1.emp_id = t2.emp_id;
+
+select * from t1 full join t2
+on t1.emp_id = t2.emp_id;
+
+select * from t1 CROSS join t2; -- 24 record 6*4 
+
+
+----
+
+
+
+CREATE TABLE player_game_data (
+    player_id INT,
+    device_id INT,
+    event_date DATE,
+    games_played INT
+);
+INSERT INTO player_game_data (player_id, device_id, event_date, games_played) VALUES
+(1, 2, '2016-03-01', 5),
+(1, 2, '2016-03-02', 1),
+(3, 1, '2016-01-02', 10),
+(3, 4, '2016-01-03', 15);
+
+---sol - 1 
+with cte_min as(
+select player_id, (min(event_date) + INTERVAL '1 day')::date min_date from player_game_data
+group by player_id
+), join_cte as (
+select p.player_id
+from player_game_data p
+JOIN cte_min c
+on p.player_id = c.player_id
+where c.min_date = p.event_date
+order by p.player_id
+)
+
+SELECT Round(count(distinct j.player_id )*1.0/count(distinct c.player_id ),2) from cte_min c
+LEFT JOIN join_cte j
+on j.player_id = c.player_id;
+
+
