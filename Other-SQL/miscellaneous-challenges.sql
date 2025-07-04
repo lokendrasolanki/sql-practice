@@ -335,3 +335,92 @@ LEFT JOIN join_cte j
 on j.player_id = c.player_id;
 
 
+CREATE TABLE ids (
+    id INTEGER
+);
+INSERT INTO ids (id) VALUES
+(1),
+(2),
+(2),
+(3),
+(3),
+(3),
+(4),
+(5),
+(5);
+
+WITH cte AS (
+    SELECT id,
+           ROW_NUMBER() OVER (PARTITION BY id ORDER BY id) AS rn
+    FROM ids
+)
+DELETE FROM ids
+WHERE id IN (
+    SELECT id FROM cte WHERE rn > 1
+)
+AND ctid NOT IN (
+    SELECT MIN(ctid)
+    FROM ids
+    GROUP BY id
+);
+select *,ctid from ids;
+
+
+/*
+OP:
+101	"Delhi"	"Indore"	4
+102	"Mumbai"	"Ahmedabad"	3
+103	"Chennai"	"Kolkata"	5
+*/
+CREATE TABLE routes (
+    id INT,
+    source VARCHAR(50),
+    dest VARCHAR(50)
+);
+
+-- Route 1: Delhi → Agra → Gwalior → Bhopal → Indore
+INSERT INTO routes (id, source, dest) VALUES
+(101, 'Delhi', 'Agra'),
+(101, 'Agra', 'Gwalior'),
+(101, 'Gwalior', 'Bhopal'),
+(101, 'Bhopal', 'Indore');
+
+-- Route 2: Mumbai → Surat → Vadodara → Ahmedabad
+INSERT INTO routes (id, source, dest) VALUES
+(102, 'Mumbai', 'Surat'),
+(102, 'Surat', 'Vadodara'),
+(102, 'Vadodara', 'Ahmedabad');
+
+-- Route 3: Chennai → Nellore → Vijayawada → Visakhapatnam → Bhubaneswar → Kolkata
+INSERT INTO routes (id, source, dest) VALUES
+(103, 'Chennai', 'Nellore'),
+(103, 'Nellore', 'Vijayawada'),
+(103, 'Vijayawada', 'Visakhapatnam'),
+(103, 'Visakhapatnam', 'Bhubaneswar'),
+(103, 'Bhubaneswar', 'Kolkata');
+
+with cnt_cte as (
+select id, count(*) cnt from routes group by id
+),cte as (
+select *, lag(dest) over( partition by id) prev_dest, lead(source) over( partition by id) next_source from routes), result as(
+select id, 
+min(case when prev_dest is null then source  end),
+min(case when next_source is null then dest  end)
+from cte where prev_dest is null or next_source is null
+group by id)
+select r.*, c.cnt from result r join cnt_cte c
+on r.id = c.id;
+
+with cnt_cte as (
+select id, count(*) cnt from routes group by id
+),source as (
+select id, source from routes where (id, source) not in (
+select id, dest from routes
+)), dest as (
+select id, dest from routes where (id, dest) not in (
+select id, source from routes
+))
+select s.*, d.dest, c.cnt from source s join dest d 
+on s.id  = d.id
+join cnt_cte c on s.id = c.id;
+
