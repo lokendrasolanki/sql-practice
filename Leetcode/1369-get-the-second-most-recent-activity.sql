@@ -27,3 +27,4 @@ WITH ranked_activities AS (
 SELECT username, activity, startdate, enddate
 FROM   ranked_activities
 WHERE  rn=2 OR count=1;
+

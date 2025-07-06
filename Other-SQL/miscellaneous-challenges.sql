@@ -225,7 +225,7 @@ INSERT INTO employee_promotions (emp_id, promotion_date, percent_increase) VALUE
 (6, '2022-06-15', 5),
 (6, '2023-11-11', 10),
 (7, '2022-01-01', 7);
-
+	
 WITH promotion_multipliers AS (
     SELECT 
         emp_id,
