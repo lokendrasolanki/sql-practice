@@ -65,6 +65,26 @@ e.employee_id = sh.employee_id
 )
 select * from cte where rn=1;
 
+-- 2. Calculate the total number of promotions each employee has received.
+with cte as (
+SELECT e.employee_id, name, promotion  FROM employees e 
+join salary_history sh
+ON
+e.employee_id = sh.employee_id)
+select employee_id, name, 
+count(case when promotion='Yes' THEN 1 END) no_of_promotion from cte
+group by employee_id, name;
 
+-- 3. Determine the maximum salary hike percentage between any two consecutive salary changes for each employee.
+with cte as (
+SELECT e.employee_id, name, salary, change_date,
+LAG(salary) OVER(partition by e.employee_id order by change_date) prev_sal 
+FROM employees e 
+join salary_history sh
+ON
+e.employee_id = sh.employee_id)
+select employee_id, name, 
+max(case when prev_sal is not null then Round(((salary-prev_sal)/salary)*100,2) ELSE 0 END) as max_change 
+from cte
+group by employee_id, name;
 
-	
