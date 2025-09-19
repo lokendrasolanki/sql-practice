@@ -229,7 +229,6 @@ INSERT INTO employee_promotions (emp_id, promotion_date, percent_increase) VALUE
 WITH promotion_multipliers AS (
     SELECT 
         emp_id,
-		
         promotion_date,
         (1 + percent_increase / 100.0) AS multiplier,
         ROW_NUMBER() OVER (PARTITION BY emp_id ORDER BY promotion_date) AS promotion_order
@@ -300,6 +299,8 @@ on t1.emp_id = t2.emp_id;
 
 select * from t1 CROSS join t2; -- 24 record 6*4 
 
+select * from t1 full outer join t2
+on t1.emp_id = t2.emp_id;
 
 ----
 
@@ -383,7 +384,10 @@ INSERT INTO routes (id, source, dest) VALUES
 (101, 'Delhi', 'Agra'),
 (101, 'Agra', 'Gwalior'),
 (101, 'Gwalior', 'Bhopal'),
-(101, 'Bhopal', 'Indore');
+(101, 'Bhopal', 'Indore'),
+(102, 'Mumbai', 'Surat'),
+(102, 'Surat', 'Vadodara'),
+(102, 'Vadodara', 'Ahmedabad');
 
 -- Route 2: Mumbai → Surat → Vadodara → Ahmedabad
 INSERT INTO routes (id, source, dest) VALUES
@@ -412,7 +416,7 @@ select r.*, c.cnt from result r join cnt_cte c
 on r.id = c.id;
 
 with cnt_cte as (
-select id, count(*) cnt from routes group by id
+select id, count(*)-1 cnt from routes group by id
 ),source as (
 select id, source from routes where (id, source) not in (
 select id, dest from routes
@@ -421,6 +425,58 @@ select id, dest from routes where (id, dest) not in (
 select id, source from routes
 ))
 select s.*, d.dest, c.cnt from source s join dest d 
-on s.id  = d.id
-join cnt_cte c on s.id = c.id;
+on s.id  = d.id;
+
+
+CREATE TABLE user_relationships (
+    user1_id VARCHAR,
+    user2_id VARCHAR
+);
+INSERT INTO user_relationships (user1_id, user2_id) VALUES
+('1', '2'),
+('1', '3'),
+('2', '3'),
+('1', '4'),
+('2', '4'),
+('1', '5'),
+('2', '5'),
+('1', '7'),
+('3', '7'),
+('1', '6'),
+('3', '6'),
+('2', '6');
+
+
+
+
+
+
+-- Create the 'transactions' table
+DROP TABLE IF EXISTS transactions;
+CREATE TABLE transactions (
+    user_id INT,
+    product_name VARCHAR(100),
+    amount INT
+);
+
+-- Insert sample data
+INSERT INTO transactions (user_id, product_name, amount) VALUES
+(123, 'Photoshop', 50),
+(123, 'Premier Pro', 100),
+(123, 'After Effects', 50),
+(234, 'Illustrator', 200),
+(234, 'Premier Pro', 100),
+(562, 'Illustrator', 200),
+(913, 'Photoshop', 50),
+(913, 'Premier Pro', 100),
+(913, 'Illustrator', 200);
+
+select user_id, sum(case when product_name = 'Photoshop' then 0 ELSE amount END ) total from transactions 
+where user_id  IN (
+select distinct user_id from transactions where product_name = 'Photoshop'
+)
+group by user_id;
+
+
+
 

@@ -1,15 +1,15 @@
 /**
 
-order_id location tmestamp.         
-123 Del 2024-12-01 01:00 PM      
-123 Del 2024-12-02 03:00 PM      
-123 BLR 2024-12-03 01:00 AM      
-123 Mum 2024-12-04 06:00 PM
-123 Del 2024-12-05 01:00 PM     
-123 Del 2024-12-06 01:00 PM   
-123 BLR 2024-12-07 01:00 PM
-123 BLR 2024-12-08 01:00 PM
-123 Guj 2024-12-10 12:00 PM
+order_id, location, tmestamp.         
+123, Del, 2024-12-01 01:00 PM      
+123, Del, 2024-12-02 03:00 PM      
+123, BLR, 2024-12-03 01:00 AM      
+123, Mum, 2024-12-04 06:00 PM
+123, Del, 2024-12-05 01:00 PM     
+123, Del, 2024-12-06 01:00 PM   
+123, BLR, 2024-12-07 01:00 PM
+123, BLR, 2024-12-08 01:00 PM
+123, Guj, 2024-12-10 12:00 PM
 
 and it's O/P
 
@@ -21,12 +21,31 @@ and it's O/P
 123 Guj 2024-12-10 12:00 PM
 
 */
+-- Create the table
+CREATE TABLE order_location (
+    order_id INT,
+    location VARCHAR(50),
+    timestamp TIMESTAMP
+);
+
+-- Insert the sample data
+INSERT INTO order_location (order_id, location, timestamp) VALUES
+(123, 'Del', '2024-12-01 13:00:00'),
+(123, 'Del', '2024-12-02 15:00:00'),
+(123, 'BLR', '2024-12-03 01:00:00'),
+(123, 'Mum', '2024-12-04 18:00:00'),
+(123, 'Del', '2024-12-05 13:00:00'),
+(123, 'Del', '2024-12-06 13:00:00'),
+(123, 'BLR', '2024-12-07 13:00:00'),
+(123, 'BLR', '2024-12-08 13:00:00'),
+(123, 'Guj', '2024-12-10 12:00:00');
+
 WITH OrderedData AS (
     SELECT
         order_id,
         location,
         timestamp,
-        LEAD(location) OVER (ORDER BY timestamp) AS next_location
+        LEAD(location) OVER (Partition by order_id ORDER BY timestamp) AS next_location
     FROM
         order_location
 )
@@ -827,4 +846,438 @@ WITH cte AS (
 SELECT round(avg(searches), 1) AS median
 FROM cte
 WHERE rn IN ((total_count / 2), (total_count / 2) + 1);
+/*
+-- You are given the two tables containing information on Etsy’s user signups and purchases. 
+
+-- Write a query to obtain the percentage of users who signed up and made a purchase within 7 days of signing up. 
+-- The result should be rounded to the nearest 2 decimal places.
+
+-- Assumptions:
+
+-- Signups who didn't buy any products yet should also count as part of the percentage of users who signed up and made a purchase within 7 days of signing up.
+
+-- If the signup date is on 06/21/2022 and the purchase date on 06/26/2022, then the user makes up part of the percentage of users who signed up and purchased within the 7 days of signing up.
+
+-- Explanation: The only users who purchased within 7 days of signing up are users 648 and 123. The total count of given signups is 5, resulting in a percentage of 2/5 = 40%.
+
+*/
+-- Create signups table
+CREATE TABLE signups (
+    user_id INTEGER NOT NULL,
+    signup_date TIMESTAMP NOT NULL
+);
+
+-- Create user_purchases table
+CREATE TABLE user_purchases (
+    user_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    purchase_amount DECIMAL(10,2) NOT NULL,
+    purchase_date TIMESTAMP NOT NULL
+);
+
+-- TRUNCATE TABLE signups;
+-- TRUNCATE TABLE user_purchases;
+-- Insert data into signups table
+INSERT INTO signups (user_id, signup_date) VALUES
+(445, '2022-06-21 12:00:00'),
+(742, '2022-06-19 12:00:00'),
+(648, '2022-06-24 12:00:00'),
+(789, '2022-06-27 12:00:00'),
+(123, '2022-06-27 12:00:00');
+
+-- Insert data into user_purchases table
+INSERT INTO user_purchases (user_id, product_id, purchase_amount, purchase_date) VALUES
+(244, 5754, 45.00, '2022-06-22 12:00:00'),
+(742, 2415, 50.00, '2022-06-28 12:00:00'),
+(648, 6325, 55.50, '2022-06-25 12:00:00'),
+(123, 4756, 67.30, '2022-06-29 12:00:00'),
+(244, 3417, 74.10, '2022-06-30 12:00:00');
+
+select 
+ROUND(count(*)*1.0/(select count(*) from signups)*100,2) single_purchase_pct 
+from signups s 
+inner join user_purchases u 
+ON
+s.user_id = u.user_id
+and u.purchase_date<=(signup_date + Interval '7 days');
+
+/*
+-- Monthly Merchant Balance [Visa SQL Interview Question]
+
+-- Say you have access to all the transactions for a given merchant account. 
+
+-- Write a query to print the cumulative balance of the merchant account at the end of each day, with the total balance reset back to zero at the end of the month. Output the transaction date and cumulative balance.
+
+*/
+CREATE TABLE transactions (
+    transaction_id INT PRIMARY KEY,
+    type VARCHAR(50),
+    amount NUMERIC(10, 2),
+    transaction_date TIMESTAMP
+);
+
+INSERT INTO transactions (transaction_id, type, amount, transaction_date) VALUES
+(19153, 'deposit', 65.90, '2022-07-10 10:00:00'),
+(53151, 'deposit', 178.55, '2022-07-08 10:00:00'),
+(29776, 'withdrawal', 25.90, '2022-07-08 10:00:00'),
+(16461, 'withdrawal', 45.99, '2022-07-08 10:00:00'),
+(77134, 'deposit', 32.60, '2022-07-10 10:00:00');
+
+with cte as (
+select transaction_date, 
+sum(CASE when type = 'withdrawal' then -amount else amount end) total_balance 
+from transactions
+group by transaction_date
+)
+select transaction_date, sum(total_balance) over(order by transaction_date) balance from cte;
+/*
+Write an SQL query to find the customers who have made purchases in all categories. Assume that the list of categories is dynamic and can change over time 
+You are given the following two tables:
+*/
+-- Customer Table
+CREATE TABLE Customers (
+    CustomerID INT PRIMARY KEY,
+    Name VARCHAR(100)
+);
+
+-- Purchases Table
+CREATE TABLE Purchases (
+    PurchaseID INT PRIMARY KEY,
+    CustomerID INT REFERENCES Customers(CustomerID),
+    Category VARCHAR(50)
+);
+
+
+-- Insert Data into Customers
+INSERT INTO Customers (CustomerID, Name) VALUES
+(1, 'Ravi Kumar'),
+(2, 'Priya Sharma'),
+(3, 'Amit Singh'),
+(4, 'Neha Verma'),
+(5, 'Rajesh Mehra');
+
+-- Insert Data into Purchases
+INSERT INTO Purchases (PurchaseID, CustomerID, Category) VALUES
+(101, 1, 'Electronics'),
+(102, 1, 'Books'),
+(103, 2, 'Clothing'),
+(104, 5, 'Groceries'),
+(105, 3, 'Electronics'),
+(106, 4, 'Books'),
+(107, 4, 'Groceries'),
+(108, 5, 'Clothing'),
+(109, 5, 'Electronics'),
+(110, 5, 'Books');
+
+-- get_catagaory_cust(
+-- select distinct Category from Purchases
+-- )
+
+-- select * from Customers where CustomerID in (select distinct CustomerID from Purchases)
+
+with cte as (
+select CustomerID, count(distinct Category) from Purchases 
+Group by CustomerID
+Having count(*) = (select count(distinct Category) from Purchases))
+select cs.* from cte c inner join Customers cs 
+on c.CustomerID = cs.CustomerID;
+
+/*
+Calculate the rolling salary over the last 2 months
+*/
+CREATE TABLE EmployeeSalaries (
+    EmployeeID INT,
+    Salary NUMERIC(10,2),
+    SalaryDate DATE
+);
+
+INSERT INTO EmployeeSalaries (EmployeeID, Salary, SalaryDate) VALUES
+(1, 50000.00, '2025-01-01'),
+(1, 52000.00, '2025-02-01'),
+(1, 54000.00, '2025-03-01'),
+
+(2, 60000.00, '2025-01-01'),
+(2, 61000.00, '2025-02-01'),
+(2, 62000.00, '2025-03-01'),
+
+(3, 45000.00, '2025-01-01'),
+(3, 47000.00, '2025-02-01'),
+(3, 48000.00, '2025-03-01'),
+
+(4, 55000.00, '2025-01-01'),
+(4, 56000.00, '2025-02-01'),
+(4, 57000.00, '2025-03-01');
+
+with cte as (
+select *, sum(salary) over(partition by EmployeeID order by SalaryDate) rolling_salary  from EmployeeSalaries),
+ranked as (
+select *, row_number() over(partition by EmployeeID order by SalaryDate desc) rn from cte )
+select EmployeeID, SalaryDate, rolling_salary  from ranked where rn <=2 order by EmployeeID, SalaryDate;
+
+with cte as (
+select *, sum(salary) over(partition by EmployeeID order by SalaryDate rows between 1 preceding and current row ) rolling_salary  from EmployeeSalaries),
+ranked as (
+select *, row_number() over(partition by EmployeeID order by SalaryDate desc ) rn from cte)
+select EmployeeID, SalaryDate,rolling_salary  from ranked where rn<=2 order by EmployeeID, SalaryDate 
+
+CREATE TABLE Logs (
+    log_id INT PRIMARY KEY
+);
+
+INSERT INTO Logs (log_id) VALUES
+(1),
+(2),
+(3),
+(7),
+(8),
+(10);
+
+with cte as (
+select *, log_id - row_number() over() as grp from Logs)
+select min(log_id) start_id, max(log_id) end_id from cte 
+group by grp
+order by start_id;
+
+/*
+SQL Question 1: First 14-Day Satisfaction
+The Growth Team at DoorDash wants to ensure that new users, who make orders within their first 14 days on the platform, have a positive experience. However, they have noticed several issues with deliveries that result in a bad experience.
+
+These issues include:
+
+Orders being completed incorrectly, with missing items or wrong orders.
+Orders not being received due to incorrect addresses or drop-off spots.
+Orders being delivered late, with the actual delivery time being 30 minutes later than the order placement time. Note that the estimated_delivery_timestamp is automatically set to 30 minutes after the order_timestamp.
+Write a query that calculates the bad experience rate for new users who signed up in June 2022 during their first 14 days on the platform. The output should include the percentage of bad experiences, rounded to 2 decimal places.
+*/
+-- Orders Table
+DROP TABLE IF EXISTS  orders;
+DROP TABLE  IF EXISTS trips;
+DROP TABLE IF EXISTS customers CASCADE;
+CREATE TABLE orders (
+    order_id INTEGER PRIMARY KEY,
+    customer_id INTEGER,
+    trip_id INTEGER,
+    status VARCHAR(50),
+    order_timestamp TIMESTAMP
+);
+
+-- Trips Table
+CREATE TABLE trips (
+    dasher_id INTEGER,
+    trip_id INTEGER PRIMARY KEY,
+    estimated_delivery_timestamp TIMESTAMP,
+    actual_delivery_timestamp TIMESTAMP
+);
+
+-- Customers Table
+CREATE TABLE customers (
+    customer_id INTEGER PRIMARY KEY,
+    signup_timestamp TIMESTAMP
+);
+
+-- Insert Data into Orders
+INSERT INTO orders (order_id, customer_id, trip_id, status, order_timestamp) VALUES
+(727424, 8472, 100463, 'completed successfully', '2022-06-05 09:12:00'),
+(242513, 2341, 100482, 'completed incorrectly', '2022-06-05 14:40:00'),
+(141367, 1314, 100362, 'completed incorrectly', '2022-06-07 15:03:00'),
+(582193, 5421, 100657, 'never received', '2022-07-07 15:22:00'),
+(253613, 1314, 100213, 'completed successfully', '2022-06-12 13:43:00');
+
+-- Insert Data into Trips
+INSERT INTO trips (dasher_id, trip_id, estimated_delivery_timestamp, actual_delivery_timestamp) VALUES
+(101, 100463, '2022-06-05 09:42:00', '2022-06-05 09:38:00'),
+(102, 100482, '2022-06-05 15:10:00', '2022-06-05 15:46:00'),
+(101, 100362, '2022-06-07 15:33:00', '2022-06-07 16:45:00'),
+(102, 100657, '2022-07-07 15:52:00', NULL), -- NULL for not delivered
+(103, 100213, '2022-06-12 14:13:00', '2022-06-12 14:10:00');
+
+-- Insert Data into Customers
+INSERT INTO customers (customer_id, signup_timestamp) VALUES
+(8472, '2022-05-30 00:00:00'),
+(2341, '2022-06-01 00:00:00'),
+(1314, '2022-06-03 00:00:00'),
+(1435, '2022-06-05 00:00:00'),
+(5421, '2022-06-07 00:00:00');
+
+/*
+SQL Question 2: Analyze DoorDash Delivery Performance
+As a Data Analyst at DoorDash, you're tasked to analyze the delivery performance of the drivers. Specifically, you are asked to compute the average delivery duration of each driver for each day, the rank of each driver's daily average delivery duration, and the overall average delivery duration per driver.
+
+Use the deliveries table where each row represents a single delivery. The columns are:
+
+delivery_id: An identifier for the delivery
+driver_id: An identifier for the driver
+delivery_start_time: Timestamp for the start of the delivery
+delivery_end_time: Timestamp for the end of the delivery
+*/
+CREATE TABLE deliveries (
+    delivery_id INTEGER PRIMARY KEY,
+    driver_id INTEGER,
+    delivery_start_time TIMESTAMP,
+    delivery_end_time TIMESTAMP
+);
+
+INSERT INTO deliveries (delivery_id, driver_id, delivery_start_time, delivery_end_time) VALUES
+(1, 123, '2022-08-01 14:00:00', '2022-08-01 14:40:00'),
+(2, 123, '2022-08-01 15:15:00', '2022-08-01 16:10:00'),
+(3, 265, '2022-08-01 14:00:00', '2022-08-01 15:30:00'),
+(4, 265, '2022-08-01 16:00:00', '2022-08-01 16:50:00'),
+(5, 123, '2022-08-02 11:00:00', '2022-08-02 11:35:00');
+
+
+---
+
+
+CREATE TABLE employee_attendance (
+    employee_id INT,
+    attendance_date DATE
+);
+
+INSERT INTO employee_attendance (employee_id, attendance_date) VALUES
+(101, '2024-07-01'),
+(101, '2024-07-02'),
+(101, '2024-07-03'),
+(101, '2024-07-04'),
+(101, '2024-07-05'),
+(101, '2024-07-07'),
+(101, '2024-07-08'),
+(101, '2024-07-09'),
+(101, '2024-07-10'),
+
+(102, '2024-07-01'),
+(102, '2024-07-02'),
+(102, '2024-07-03'),
+(102, '2024-07-05'),
+(102, '2024-07-06'),
+(102, '2024-07-08'),
+(102, '2024-07-10'),
+
+(103, '2024-07-02'),
+(103, '2024-07-04'),
+(103, '2024-07-06'),
+(103, '2024-07-07'),
+(103, '2024-07-09'),
+(103, '2024-07-10');
+
+with cte as (
+select *, 
+row_number() over(partition by employee_id order by attendance_date) rn
+from employee_attendance),
+grp_cte as (
+select *, attendance_date - rn * INTERVAL '1 day' grp from cte)
+select employee_id, grp, count(*) from grp_cte group by employee_id, grp;
+
+-- Create table and insert data in one script
+CREATE TABLE products (
+    product_id INTEGER PRIMARY KEY,
+    product VARCHAR(50) NOT NULL,
+    category VARCHAR(50) NOT NULL
+);
+
+INSERT INTO products (product_id, product, category) VALUES
+(1, 'Laptop', 'Electronics'),
+(2, 'Smartphone', 'Electronics'), 
+(3, 'Tablet', 'Electronics'),
+(9, 'Printer', 'Electronics'),
+(4, 'Headphones', 'Accessories'),
+(5, 'Smartwatch', 'Accessories'),
+(6, 'Keyboard', 'Accessories'),
+(7, 'Mouse', 'Accessories'),
+(8, 'Monitor', 'Accessories');
+
+with cte as (
+select *, 
+row_number() over(partition by category order by product_id ) rn1, 
+row_number() over(partition by category order by product_id desc) rn2
+from products)
+
+select c1.product_id, c2.product, c1.category from cte c1 inner join cte c2
+on c1.category = c2.category and c1.rn1 = c2.rn2;
+
+/*
+-- The Apple retention team needs your help to investigate buying patterns. 
+
+-- Write a query to determine the percentage of buyers who bought AirPods directly after they bought iPhones. 
+-- Round your answer to a percentage (i.e. 20 for 20%, 50 for 50) with no decimals.
+
+-- Clarifications:
+
+-- The users were interested in buying iPhones and then AirPods, with no intermediate purchases in between.
+-- Users who buy iPhones and AirPods at the same time, with the iPhone logged first, can still be counted.
+-- Tip:
+
+-- Multiply by 100 before you perform the rounding to make sure you get the same answer we did :)
+
+
+*/
+
+DROP TABLE IF EXISTS transactions;
+-- Create the table
+CREATE TABLE transactions (
+    transaction_id INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    product_name VARCHAR(50) NOT NULL,
+    transaction_timestamp TIMESTAMP NOT NULL
+);
+
+-- Insert the data
+INSERT INTO transactions (transaction_id, customer_id, product_name, transaction_timestamp) VALUES
+(1, 101, 'iPhone', '2022-08-08 00:00:00'),
+(2, 101, 'AirPods', '2022-08-08 00:00:00'),
+(5, 301, 'iPhone', '2022-09-05 00:00:00'),
+(6, 301, 'iPad', '2022-09-06 00:00:00'),
+(7, 301, 'AirPods', '2022-09-07 00:00:00');
+
+with total_counts as (
+select count(distinct customer_id) AS total from transactions
+),cte as (
+select *, lead(product_name) over (partition by customer_id 
+order by transaction_timestamp) next_product,
+count( customer_id) over( partition by customer_id) total_cust  from transactions)
+select count(distinct customer_id)*1.0/total * 100 follow_up_percentage from cte
+cross join total_counts 
+where next_product = 'AirPods' and product_name = 'iPhone'
+group by customer_id, total;
+
+/*
+-- Uniquely Staffed Consultants [Accenture SQL Interview Questions]
+
+-- As a Data Analyst on the People Operations team at Accenture, you are tasked with understanding how many consultants are staffed to each client, and how many consultants are exclusively staffed to a single client.
+
+-- Write a query that displays the outputs of client name and the number of uniquely and exclusively staffed consultants ordered by client name.
+
+
+*/
+
+
+-- Create the table
+CREATE TABLE employee_engagement (
+    employee_id INTEGER NOT NULL,
+    engagement_id INTEGER NOT NULL
+);
+
+-- Insert the data
+INSERT INTO employee_engagement (employee_id, engagement_id) VALUES
+(1001, 1),
+(1001, 2),
+(1002, 2),
+(1003, 3),
+(1004, 4);
+
+-- Create the table
+CREATE TABLE consulting_engagements (
+    engagement_id INTEGER PRIMARY KEY,
+    project_name VARCHAR(100) NOT NULL,
+    client_name VARCHAR(100) NOT NULL
+);
+
+-- Insert the data
+INSERT INTO consulting_engagements (engagement_id, project_name, client_name) VALUES
+(1, 'SAP Logistics Modernization', 'Department of Defense'),
+(2, 'Oracle Cloud Migration', 'Department of Education'),
+(3, 'Trust & Safety Operations', 'Google'),
+(4, 'SAP IoT Cloud Integration', 'Google');
+
+
+
 

@@ -2164,7 +2164,54 @@ from host h
  on t.team_id = coalesce(host_team, guest_team)
  order by points desc , team;
 
+/*
+Table 1:
+Buses (id, origin, destination, time)
+
+Table2:
+Passengers (id, origin, destination, time)
+
+There could be multiple busses for same origin, destination.
+Passenger will board bus the earliest bus as per their schedule.
+write query that returns the number of passenger boarding for each bus.
+*/
+
+ CREATE TABLE buses (
+    id INT,
+    origin VARCHAR(50),
+    destination VARCHAR(50),
+    time DECIMAL(3,1)
+);
+
+INSERT INTO buses (id, origin, destination, time) VALUES
+(1, 'Delhi', 'Mumbai', 7.0),
+(2, 'Delhi', 'Jaipur', 8.0),
+(3, 'Jaipur', 'Mumbai', 7.0),
+(4, 'Mumbai', 'Pune', 8.0),
+(5, 'Delhi', 'Mumbai', 9.0),
+(6, 'Delhi', 'Jaipur', 9.0),
+(7, 'Delhi', 'Jaipur', 7.3);
+CREATE TABLE passengers (
+    id INT,
+    origin VARCHAR(50),
+    destination VARCHAR(50),
+    time DECIMAL(4,2)
+);
+
+INSERT INTO passengers (id, origin, destination, time) VALUES
+(1, 'Delhi', 'Mumbai', 8.0),
+(2, 'Delhi', 'Jaipur', 8.15),
+(3, 'Jaipur', 'Mumbai', 7.0),
+(4, 'Mumbai', 'Pune', 7.0),
+(5, 'Delhi', 'Mumbai', 8.0),
+(6, 'Delhi', 'Jaipur', 8.30),
+(7, 'Delhi', 'Jaipur', 7.45);
 
 
-
-
+with cte as (
+select  b.id, b.origin, b.destination, b.time as bus_time, p.time, row_number() over(partition by p.id order by b.time) as rn from buses b join passengers p 
+on b.origin = p.origin and b.destination = p.destination
+where p.time<=b.time)
+select id,origin, destination, bus_time, count(*) num_passangers from cte
+where rn =1
+group by id, origin, destination, bus_time

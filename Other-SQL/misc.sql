@@ -485,4 +485,275 @@ ON e1.manager_id = e2.emp_id
 LEFT JOIN employees e3
 ON e2.manager_id = e3.emp_id;
 
+/*
+Write a query to print the cumulative balance of the merchant account at the end of each day,
+with the total balance reset back to zero at the end of the month.
+Output the transaction date and cumulative balance.
+*/
+drop table if exists transactions;
+CREATE TABLE transactions (
+    transaction_id INT,
+    type VARCHAR(20),
+    amount DECIMAL(10, 2),
+    transaction_date TIMESTAMP
+);
 
+INSERT INTO transactions (transaction_id, type, amount, transaction_date) VALUES
+(19153, 'deposit', 65.90, '2022-07-10 10:00:00'),
+(53151, 'deposit', 178.55, '2022-07-08 10:00:00'),
+(29776, 'withdrawal', 25.90, '2022-07-08 10:00:00'),
+(16461, 'withdrawal', 45.99, '2022-07-08 10:00:00'),
+(77134, 'deposit', 32.60, '2022-07-10 10:00:00');
+
+with cte as (
+select transaction_date , sum(case when type = 'withdrawal' then -amount else amount end) total_sum 
+from transactions group by transaction_date)
+select transaction_date, 
+sum(total_sum) over(order by transaction_date) as balance 
+from cte;
+
+/*
+The Airbnb Booking Recommendations team is trying to understand the "substitutability" of two rentals and whether one rental is a good substitute for another.
+
+Write a query to find the unique combination of two Airbnb rentals with the exact same amenities offered.
+
+Assumptions:
+
+If property 1 has a kitchen and pool, and property 2 has a kitchen and pool too, they are good substitutes and represent a unique matching rental.
+
+If property 3 has a kitchen, pool, and fireplace, and property 4 only has a pool and fireplace, then they are not a good substitute.
+
+
+*/
+CREATE TABLE rental_amenities (
+  rental_id int,
+  amenity varchar(50)
+);
+
+INSERT INTO rental_amenities (rental_id, amenity) VALUES
+(123, 'pool'),
+(123, 'kitchen'),
+(234, 'hot tub'),
+(234, 'fireplace'),
+(345, 'kitchen'),
+(345, 'pool'),
+(456, 'pool');
+
+with cte as (
+select rental_id, 
+STRING_AGG(amenity, ', ' ORDER BY amenity) all_amenity from rental_amenities 
+ GROUP BY rental_id )
+ select count(*) as matching_airbnb 
+ from cte c1
+ INNER JOIN cte c2 
+ on c1.all_amenity = c2.all_amenity 
+ and c1.rental_id < c2.rental_id;
+
+
+ /*
+ Find all regions where sales have increased for five consecutive years. A region qualifies if, for each of the five years, sales are higher than in the previous year. Return the region name along with the starting year of the five-year growth period.
+ */
+
+
+ -- Create the sales_data table
+CREATE TABLE sales_data (
+    region_name TEXT,
+    year INTEGER,
+    sales NUMERIC
+);
+INSERT INTO sales_data (region_name, year, sales) VALUES
+    ('latam', 2012, 230.62),
+    ('us_west', 2010, 163.94),
+    ('us_east', 2012, 270.63),
+    ('emea', 2010, 150.0),
+    ('us_east', 2010, 108.69),
+    ('us_west', 2012, 188.41),
+    ('canada_central', 2017, 138.9),
+    ('us_east', 2015, 168.64),
+    ('us_west', 2011, 176.69),
+    ('apac', 2015, 173.46),
+    ('us_west', 2011, 176.69),
+    ('apac', 2017, 210.97),
+    ('apac', 2013, 143.11),
+    ('europe_north', 2015, 255.28),
+    ('us_east', 2014, 149.76),
+    ('us_west', 2012, 260.8),
+    ('us_west', 2010, 163.94),
+    ('canada_central', 2011, 235.01),
+    ('apac', 2010, 181.7),
+    ('canada_central', 2010, 161.44),
+    ('apac', 2011, 120.0),
+    ('emea', 2014, 150.0),
+    ('europe_north', 2010, 164.99),
+    ('us_west', 2012, 188.41),
+    ('emea', 2011, 150.0),
+    ('europe_north', 2011, 177.19),
+    ('emea', 2013, 150.0),
+    ('india_south', 2013, 179.75),
+    ('apac', 2020, 272.29),
+    ('emea', 2012, 150.0),
+    ('us_west', 2014, 231.01),
+    ('us_east', 2011, 118.99),
+    ('us_west', 2013, 216.04),
+    ('us_west', 2015, 258.55),
+    ('apac', 2018, 236.95),
+    ('apac', 2019, 248.11),
+    ('apac', 2015, 126.78),
+    ('europe_north', 2012, 196.77),
+    ('emea', 2015, 150.0),
+    ('apac', 2012, 133.4),
+    ('us_east', 2010, 197.51),
+    ('apac', 2014, 178.72),
+    ('us_west', 2012, 250.08),
+    ('europe_north', 2017, 247.0),
+    ('europe_north', 2008, 294.09),
+    ('india_south', 2007, 201.45),
+    ('europe_north', 2013, 219.27),
+    ('us_east', 2012, 133.07),
+    ('europe_north', 2014, 205.25),
+    ('us_east', 2013, 153.85),
+    ('apac', 2021, 280.0),
+    ('apac', 2022, 300.0),
+    ('apac', 2023, 320.0),
+    ('apac', 2024, 350.0),
+    ('apac', 2025, 400.0),
+    ('europe_north', 2016, 200.0),
+    ('europe_north', 2018, 250.0),
+    ('europe_north', 2019, 270.0),
+    ('europe_north', 2020, 300.0);
+
+with cte as (
+select *, row_number() over() rn, lag(sales) over(partition by region_name order by year) prev_sale from sales_data)
+,case_cte as (
+select *,
+CASE WHEN (sales IS NULL OR (sales-prev_sale)>0) THEN 1 ELSE 0 END as check_sales from cte )
+, cte1 as (
+select *,  row_number() over(partition by region_name, check_sales order by year ) rn1 ,rn - check_sales AS group_id from case_cte where check_sales=1)
+select region_name, rn -rn1, count(*) from cte1 
+group by region_name, rn -rn1
+having count(*)>=5;
+
+/*
+Identify returning active users by finding users who made a second purchase within 7 days or less of any previous purchase. Output a list of these user_id.
+*/
+
+-- Create the `sales` table
+CREATE TABLE amazon_transactions (
+    id INT,
+    user_id INT,
+    item TEXT,
+    created_at DATE,
+    revenue INT
+);
+
+-- Insert data into the `sales` table
+INSERT INTO amazon_transactions (id, user_id, item, created_at, revenue) VALUES
+(1, 109, 'milk', '2020-03-03', 123),
+(2, 139, 'biscuit', '2020-03-18', 421),
+(3, 120, 'milk', '2020-03-18', 176),
+(4, 108, 'banana', '2020-03-18', 862),
+(5, 130, 'milk', '2020-03-28', 333),
+(6, 103, 'bread', '2020-03-29', 862),
+(7, 122, 'banana', '2020-03-07', 952),
+(8, 125, 'bread', '2020-03-13', 317),
+(9, 139, 'bread', '2020-03-30', 929),
+(10, 141, 'banana', '2020-03-17', 812),
+(11, 116, 'bread', '2020-03-31', 226),
+(12, 128, 'bread', '2020-03-04', 112),
+(13, 146, 'biscuit', '2020-03-04', 362),
+(14, 119, 'banana', '2020-03-28', 127),
+(15, 142, 'bread', '2020-03-09', 503),
+(16, 122, 'bread', '2020-03-06', 593),
+(17, 128, 'biscuit', '2020-03-24', 160),
+(18, 112, 'banana', '2020-03-24', 262),
+(19, 149, 'banana', '2020-03-29', 382),
+(20, 100, 'banana', '2020-03-18', 599),
+(21, 130, 'milk', '2020-03-16', 604),
+(22, 103, 'milk', '2020-03-31', 290),
+(23, 112, 'banana', '2020-03-23', 523),
+(24, 102, 'bread', '2020-03-25', 325),
+(25, 120, 'biscuit', '2020-03-21', 858),
+(26, 109, 'bread', '2020-03-22', 432),
+(27, 101, 'milk', '2020-03-01', 449),
+(28, 138, 'milk', '2020-03-19', 961),
+(29, 100, 'milk', '2020-03-29', 410),
+(30, 129, 'milk', '2020-03-02', 771),
+(31, 123, 'milk', '2020-03-31', 434),
+(32, 104, 'biscuit', '2020-03-31', 957),
+(33, 110, 'bread', '2020-03-13', 210),
+(34, 143, 'bread', '2020-03-27', 870),
+(35, 130, 'milk', '2020-03-12', 176),
+(36, 128, 'milk', '2020-03-28', 498),
+(37, 133, 'banana', '2020-03-21', 837),
+(38, 150, 'banana', '2020-03-20', 927),
+(39, 120, 'milk', '2020-03-27', 793),
+(40, 109, 'bread', '2020-03-02', 362),
+(41, 110, 'bread', '2020-03-13', 262),
+(42, 140, 'milk', '2020-03-09', 468),
+(43, 112, 'banana', '2020-03-04', 381),
+(44, 117, 'biscuit', '2020-03-19', 831),
+(45, 137, 'banana', '2020-03-23', 490),
+(46, 130, 'bread', '2020-03-09', 149),
+(47, 133, 'bread', '2020-03-08', 658),
+(48, 143, 'milk', '2020-03-11', 317),
+(49, 111, 'biscuit', '2020-03-23', 204),
+(50, 150, 'banana', '2020-03-04', 299),
+(51, 131, 'bread', '2020-03-10', 155),
+(52, 140, 'biscuit', '2020-03-17', 810),
+(53, 147, 'banana', '2020-03-22', 702),
+(54, 119, 'biscuit', '2020-03-15', 355),
+(55, 116, 'milk', '2020-03-12', 468),
+(56, 141, 'milk', '2020-03-14', 254),
+(57, 143, 'bread', '2020-03-16', 647),
+(58, 105, 'bread', '2020-03-21', 562),
+(59, 149, 'biscuit', '2020-03-11', 827),
+(60, 117, 'banana', '2020-03-22', 249),
+(61, 150, 'banana', '2020-03-21', 450),
+(62, 134, 'bread', '2020-03-08', 981),
+(63, 133, 'banana', '2020-03-26', 353),
+(64, 127, 'milk', '2020-03-27', 300),
+(65, 101, 'milk', '2020-03-26', 740),
+(66, 137, 'biscuit', '2020-03-12', 473),
+(67, 113, 'biscuit', '2020-03-21', 278),
+(68, 141, 'bread', '2020-03-21', 118),
+(69, 112, 'biscuit', '2020-03-14', 334),
+(70, 118, 'milk', '2020-03-30', 603),
+(71, 111, 'milk', '2020-03-19', 205),
+(72, 146, 'biscuit', '2020-03-13', 599),
+(73, 148, 'banana', '2020-03-14', 530),
+(74, 100, 'banana', '2020-03-13', 175),
+(75, 105, 'banana', '2020-03-05', 815),
+(76, 129, 'milk', '2020-03-02', 489),
+(77, 121, 'milk', '2020-03-16', 476),
+(78, 117, 'bread', '2020-03-11', 270),
+(79, 133, 'milk', '2020-03-12', 446),
+(80, 124, 'bread', '2020-03-31', 937),
+(81, 145, 'bread', '2020-03-07', 821),
+(82, 105, 'banana', '2020-03-09', 972),
+(83, 131, 'milk', '2020-03-09', 808),
+(84, 114, 'biscuit', '2020-03-31', 202),
+(85, 120, 'milk', '2020-03-06', 898),
+(86, 130, 'milk', '2020-03-06', 581),
+(87, 141, 'biscuit', '2020-03-11', 749),
+(88, 147, 'bread', '2020-03-14', 262),
+(89, 118, 'milk', '2020-03-15', 735),
+(90, 136, 'biscuit', '2020-03-22', 410),
+(91, 132, 'bread', '2020-03-06', 161),
+(92, 137, 'biscuit', '2020-03-31', 427),
+(93, 107, 'bread', '2020-03-01', 701),
+(94, 111, 'biscuit', '2020-03-18', 218),
+(95, 100, 'bread', '2020-03-07', 410),
+(96, 106, 'milk', '2020-03-21', 379),
+(97, 114, 'banana', '2020-03-25', 705),
+(98, 110, 'bread', '2020-03-27', 225),
+(99, 130, 'milk', '2020-03-16', 494),
+(100, 117, 'bread', '2020-03-10', 209);
+
+
+with cte as (
+select *, LAG( created_at) over(partition by user_id order by created_at) prev_date from amazon_transactions )
+select distinct user_id from cte
+where (created_at - prev_date)<=7 
+group by user_id, created_at - prev_date
+Order by user_id
+	
